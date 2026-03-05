@@ -1,0 +1,318 @@
+import { ReactNode, useState } from 'react'
+import { Icon } from '../atoms'
+import { IconName } from '../atoms/icon'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../atoms'
+import { cn } from '../../lib/utils'
+import { useI18n } from '../../lib/i18n'
+import type { NightStepAudience } from '../../lib/roles/types'
+
+// ============================================================================
+// STEP TYPE
+// ============================================================================
+
+export type NightStep = {
+  id: string
+  icon: IconName
+  label: string
+  status: 'pending' | 'done' | 'active' | 'skipped'
+  audience?: NightStepAudience
+  note?: string
+}
+
+// ============================================================================
+// LAYOUT PROPS
+// ============================================================================
+
+type Props = {
+  icon: IconName
+  roleName: string
+  playerName: string
+  isEvil?: boolean
+  steps: NightStep[]
+  onSelectStep: (stepId: string) => void
+  children?: ReactNode
+}
+
+// ============================================================================
+// AUDIENCE BADGE HELPERS
+// ============================================================================
+
+function getAudienceIcon(audience: NightStepAudience): IconName {
+  switch (audience) {
+    case 'narrator':
+      return 'eye'
+    case 'player_choice':
+      return 'userRound'
+    case 'player_reveal':
+      return 'smartphone'
+  }
+}
+
+function getAudienceColor(audience: NightStepAudience, isActive: boolean) {
+  switch (audience) {
+    case 'narrator':
+      return isActive ? 'text-blue-400/80' : 'text-blue-400/50'
+    case 'player_choice':
+      return isActive ? 'text-amber-400/90' : 'text-amber-400/50'
+    case 'player_reveal':
+      return isActive ? 'text-emerald-400/80' : 'text-emerald-400/50'
+  }
+}
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
+export function NightStepListLayout({
+  icon,
+  roleName,
+  playerName,
+  isEvil,
+  steps,
+  onSelectStep,
+}: Props) {
+  const { t } = useI18n()
+  const [reviewStep, setReviewStep] = useState<NightStep | null>(null)
+
+  // Find first pending step
+  const nextPendingIndex = steps.findIndex((s) => s.status === 'pending')
+
+  return (
+    <div
+      className={cn(
+        'min-h-app flex flex-col bg-gradient-to-b',
+        isEvil
+          ? 'from-red-950 via-grimoire-blood to-grimoire-darker'
+          : 'from-indigo-950 via-grimoire-purple to-grimoire-darker',
+      )}
+    >
+      {/* Header */}
+      <div className='px-4 py-4 sm:py-6 text-center'>
+        <div className='flex justify-center mb-3 sm:mb-4'>
+          <div
+            className={cn(
+              'w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center border',
+              isEvil
+                ? 'bg-red-900/30 border-red-600/40'
+                : 'bg-indigo-500/10 border-indigo-400/30',
+            )}
+          >
+            <Icon
+              name={icon}
+              size='2xl'
+              className={cn(
+                isEvil ? 'text-red-400 text-glow-crimson' : 'text-indigo-400',
+              )}
+            />
+          </div>
+        </div>
+
+        <h1 className='font-tarot text-lg sm:text-xl text-parchment-100 tracking-wider uppercase mb-1'>
+          {roleName}
+        </h1>
+        <p
+          className={cn(
+            'text-sm',
+            isEvil ? 'text-red-400/70' : 'text-indigo-400/70',
+          )}
+        >
+          {playerName}
+        </p>
+      </div>
+
+      {/* Steps List */}
+      <div className='flex-1 px-4 pb-4 sm:pb-6 max-w-lg mx-auto w-full overflow-y-auto'>
+        <div className='flex items-center gap-2 mb-3 px-1'>
+          <Icon
+            name='listOrdered'
+            size='sm'
+            className={cn(isEvil ? 'text-red-400' : 'text-indigo-400')}
+          />
+          <span className='font-tarot text-sm text-parchment-100 tracking-wider uppercase'>
+            {t.game.nightSteps}
+          </span>
+        </div>
+
+        <div className='space-y-1'>
+          {steps.map((step, index) => {
+            const isNext = index === nextPendingIndex
+            const isDone = step.status === 'done'
+            const isSkipped = step.status === 'skipped'
+            const audience = step.audience ?? 'narrator'
+
+            const audienceLabel =
+              audience === 'narrator'
+                ? t.game.audienceNarrator
+                : audience === 'player_choice'
+                  ? t.game.audiencePlayerChoice
+                  : t.game.audiencePlayerReveal
+
+            const isClickable = isNext || (isSkipped && Boolean(step.note))
+
+            return (
+              <button
+                key={step.id}
+                onClick={
+                  isNext
+                    ? () => onSelectStep(step.id)
+                    : isSkipped && step.note
+                      ? () => setReviewStep(step)
+                      : undefined
+                }
+                disabled={!isClickable}
+                className={cn(
+                  'w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left',
+                  isNext && 'active:scale-[0.98] active:brightness-90',
+                  isNext
+                    ? isEvil
+                      ? 'bg-red-900/30 border border-red-500/40 hover:bg-red-900/50 cursor-pointer'
+                      : 'bg-indigo-900/30 border border-indigo-500/40 hover:bg-indigo-900/50 cursor-pointer'
+                    : isSkipped
+                      ? 'bg-white/3 opacity-60 hover:opacity-80 cursor-pointer'
+                    : isDone
+                      ? 'bg-white/3 opacity-70'
+                      : 'bg-white/2 opacity-50',
+                )}
+              >
+                {/* Order number */}
+                <div
+                  className={cn(
+                    'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold',
+                    isNext
+                      ? isEvil
+                        ? 'bg-red-500/30 text-red-300 border border-red-400/40'
+                        : 'bg-indigo-500/30 text-indigo-300 border border-indigo-400/40'
+                      : isSkipped
+                        ? 'bg-parchment-500/10 text-parchment-500 border border-parchment-500/20'
+                      : isDone
+                        ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
+                        : 'bg-white/5 text-parchment-600 border border-white/10',
+                  )}
+                >
+                  {isDone ? <Icon name='check' size='xs' /> : isSkipped ? <Icon name='zapOff' size='xs' /> : index + 1}
+                </div>
+
+                {/* Icon */}
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border',
+                    isNext
+                      ? isEvil
+                        ? 'bg-red-900/30 border-red-600/30'
+                        : 'bg-indigo-500/20 border-indigo-400/30'
+                      : isSkipped
+                        ? 'bg-parchment-500/8 border-parchment-500/15'
+                      : isDone
+                        ? 'bg-parchment-500/10 border-parchment-500/20'
+                      : 'bg-white/5 border-white/10',
+                  )}
+                >
+                  <Icon
+                    name={step.icon}
+                    size='md'
+                    className={cn(
+                      isNext
+                        ? isEvil
+                          ? 'text-red-400'
+                          : 'text-indigo-300'
+                        : isSkipped
+                          ? 'text-parchment-500'
+                        : 'text-parchment-500',
+                    )}
+                  />
+                </div>
+
+                {/* Label + Audience Badge */}
+                <div className='flex-1 min-w-0'>
+                  <div
+                    className={cn(
+                      'font-medium text-sm',
+                      isNext
+                        ? 'text-parchment-100'
+                        : isSkipped
+                          ? 'text-parchment-500'
+                        : isDone
+                          ? 'text-parchment-400'
+                        : 'text-parchment-600',
+                    )}
+                  >
+                    {step.label}
+                  </div>
+                  <div
+                    className={cn(
+                      'flex items-center gap-1 mt-0.5',
+                      getAudienceColor(audience, isNext || isDone),
+                    )}
+                  >
+                    <Icon name={getAudienceIcon(audience)} size='xs' />
+                    <span className='text-[10px] uppercase tracking-wider'>
+                      {audienceLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Status Badge */}
+                {isDone && (
+                  <span className='flex items-center gap-1 text-xs text-emerald-400'>
+                    <Icon name='checkCircle' size='sm' />
+                    {t.game.actionDone}
+                  </span>
+                )}
+                {isSkipped && (
+                  <span className='flex items-center gap-1 text-xs text-parchment-500'>
+                    <Icon name='zapOff' size='sm' />
+                    {t.game.actionSkipped}
+                  </span>
+                )}
+                {isNext && (
+                  <span className='flex items-center gap-1 text-xs text-indigo-300'>
+                    <Icon name='arrowRight' size='sm' />
+                    {t.game.nextAction}
+                  </span>
+                )}
+                {!isDone && !isNext && !isSkipped && (
+                  <span className='flex items-center gap-1 text-xs text-parchment-600'>
+                    {t.game.actionPending}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <Dialog
+        open={reviewStep !== null}
+        onOpenChange={(open) => {
+          if (!open) setReviewStep(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{reviewStep?.label ?? t.game.actionSummary}</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <div className='space-y-3'>
+              <div className='flex items-center gap-2 text-parchment-400 text-sm bg-white/5 rounded-lg p-3'>
+                <Icon name='zapOff' size='sm' />
+                {t.game.actionSkipped}
+              </div>
+              {reviewStep?.note && (
+                <div className='flex items-start gap-2 text-parchment-300 text-sm bg-white/5 rounded-lg p-3'>
+                  <Icon name='scrollText' size='sm' className='mt-0.5 flex-shrink-0' />
+                  {reviewStep.note}
+                </div>
+              )}
+            </div>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

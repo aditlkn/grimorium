@@ -1,0 +1,116 @@
+import plugin from "tailwindcss/plugin";
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        tarot: ['"Cinzel"', 'serif'],
+        body: ['"Inter"', 'sans-serif'],
+      },
+      letterSpacing: {
+        'widest-xl': '0.2em',
+      },
+      colors: {
+        // Parchment/cream colors for good teams
+        parchment: {
+          50: '#FFFEF8',
+          100: '#FDF8E7',
+          200: '#F5EDD6',
+          300: '#E8DCC0',
+          400: '#D4C5A2',
+          500: '#B8A77D',
+        },
+        // Mystical accent colors
+        mystic: {
+          gold: '#D4AF37',
+          bronze: '#CD7F32',
+          silver: '#C0C0C0',
+          crimson: '#8B0000',
+          midnight: '#191970',
+        },
+        // Dark theme colors
+        grimoire: {
+          dark: '#0D0D0D',
+          darker: '#080808',
+          purple: '#1A0A2E',
+          blood: '#2D0A0A',
+        },
+      },
+      backgroundImage: {
+        'tarot-pattern': 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%)',
+        'parchment-texture':
+          'radial-gradient(ellipse at 20% 20%, rgba(255,250,240,0.03) 0%, transparent 50%), ' +
+          'radial-gradient(ellipse at 80% 80%, rgba(255,250,240,0.02) 0%, transparent 50%)',
+      },
+      boxShadow: {
+        'tarot': '0 0 0 1px rgba(212, 175, 55, 0.3), 0 4px 20px rgba(0, 0, 0, 0.3)',
+        'tarot-glow': '0 0 20px rgba(212, 175, 55, 0.2)',
+      },
+      keyframes: {
+        'sheet-in': {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
+        'sheet-out': {
+          from: { transform: 'translateY(0)' },
+          to: { transform: 'translateY(100%)' },
+        },
+        'overlay-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'overlay-out': {
+          from: { opacity: '1' },
+          to: { opacity: '0' },
+        },
+        'toast-in': {
+          from: { opacity: '0', transform: 'translateY(-8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'toast-out': {
+          from: { opacity: '1', transform: 'translateY(0)' },
+          to: { opacity: '0', transform: 'translateY(-8px)' },
+        },
+        'popover-in': {
+          from: { opacity: '0', transform: 'scale(0.95) translateY(-4px)' },
+          to: { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        'popover-out': {
+          from: { opacity: '1', transform: 'scale(1) translateY(0)' },
+          to: { opacity: '0', transform: 'scale(0.95) translateY(-4px)' },
+        },
+      },
+      animation: {
+        'sheet-in': 'sheet-in 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        'sheet-out': 'sheet-out 0.2s cubic-bezier(0.32, 0.72, 0, 1)',
+        'overlay-in': 'overlay-in 0.3s ease-out',
+        'overlay-out': 'overlay-out 0.2s ease-out',
+        'toast-in': 'toast-in 0.3s ease-out',
+        'popover-in': 'popover-in 0.15s ease-out',
+        'popover-out': 'popover-out 0.1s ease-in',
+      },
+    },
+  },
+  plugins: [
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        '.text-glow-gold': {
+          'text-shadow': '0 0 10px rgba(212, 175, 55, 0.5)',
+        },
+        '.text-glow-crimson': {
+          'text-shadow': '0 0 10px rgba(139, 0, 0, 0.7)',
+        },
+        '.min-h-app': {
+          'min-height': 'var(--app-height)',
+          'max-height': 'var(--app-height)',
+          'overflow-y': 'auto',
+        },
+      });
+    }),
+  ],
+};

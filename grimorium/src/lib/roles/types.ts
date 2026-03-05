@@ -1,0 +1,227 @@
+import { GameState, PlayerState, HistoryEntry, Game } from '../types'
+import type { Alignment } from '../types'
+import { IconName } from '../../components/atoms/icon'
+import { TeamId } from '../teams'
+import { Intent, WinConditionCheck } from '../pipeline/types'
+import { Translations } from '../i18n/types'
+
+// ============================================================================
+// EFFECT TYPES
+// ============================================================================
+
+export type EffectToAdd = {
+  type: string
+  data?: Record<string, unknown>
+  sourcePlayerId?: string
+  expiresAt?: 'end_of_night' | 'end_of_day' | 'never'
+}
+
+export type EvilInfoModifier = {
+  suppressDemonLearnsMinions?: boolean
+  suppressMinionsLearnDemon?: boolean
+  suppressMinionsLearnOtherMinions?: boolean
+  suppressDemonBluffs?: boolean
+}
+
+// ============================================================================
+// NIGHT ACTION PROPS
+// ============================================================================
+
+export type GrimoireIntentForNightAction =
+  | { view: 'list'; readOnly?: boolean }
+  | { view: 'player_detail'; player: PlayerState; readOnly?: boolean }
+
+export type NightActionProps = {
+  game: Game
+  state: GameState
+  player: PlayerState
+  onComplete: (result: NightActionResult) => void
+  /** Optional: open the Grimoire modal (e.g. for Spy's read-only view) */
+  onOpenGrimoire?: (
+    intent: GrimoireIntentForNightAction,
+    readOnly?: boolean,
+  ) => void
+}
+
+export type NightActionResult = {
+  // The events to add to history
+  entries: Omit<HistoryEntry, 'id' | 'timestamp' | 'stateAfter'>[]
+  // Updates to apply to the game state
+  stateUpdates?: Partial<GameState>
+  // Effects to add to players (playerId -> effects to add)
+  addEffects?: Record<string, EffectToAdd[]>
+  // Effects to remove from players (playerId -> effect types to remove)
+  removeEffects?: Record<string, string[]>
+  // Role changes to apply to players (playerId -> new roleId)
+  changeRoles?: Record<string, string>
+  // Alignment changes to apply to players (playerId -> new alignment)
+  changeAlignments?: Record<string, Alignment>
+  // Intent to resolve through the pipeline (for action roles like Imp)
+  intent?: Intent
+  // Optional additional intents to resolve sequentially
+  intents?: Intent[]
+}
+
+// ============================================================================
+// ROLE REVEAL PROPS
+// ============================================================================
+
+export type RoleRevealProps = {
+  player: PlayerState
+  onContinue: () => void
+}
+
+// ============================================================================
+// NIGHT STEPS
+// ============================================================================
+
+/**
+ * Declarative metadata for a step in a role's night action flow.
+ * Used by NightStepListLayout to render the step list landing page.
+ */
+export type NightStepAudience = 'narrator' | 'player_choice' | 'player_reveal'
+
+export type NightStepDefinition = {
+  id: string
+  icon: IconName
+  getLabel: (t: Translations) => string
+  /** If provided, this step is only shown when the condition returns true. */
+  condition?: (game: Game, player: PlayerState, state: GameState) => boolean
+  /**
+   * Who this step is for:
+   * - `narrator` — Storyteller makes a decision (default if omitted)
+   * - `player_choice` — Player decides (tells ST verbally), ST uses screen
+   * - `player_reveal` — Player sees the screen (HandDeviceScreen interstitial)
+   */
+  audience?: NightStepAudience
+}
+
+// ============================================================================
+// SETUP ACTION PROPS
+// ============================================================================
+
+/**
+ * Props for a role's pre-revelation setup action.
+ * Used for roles that need narrator configuration before role revelation
+ * (e.g., the Drunk choosing which Townsfolk to believe they are).
+ */
+export type SetupActionProps = {
+  player: PlayerState
+  state: GameState
+  onComplete: (result: SetupActionResult) => void
+}
+
+export type SetupActionResult = {
+  // Change this player's roleId to a new role
+  changeRole?: string
+  // Effects to add to players (playerId -> effects to add)
+  addEffects?: Record<string, EffectToAdd[]>
+  // Effects to remove from players (playerId -> effect types to remove)
+  removeEffects?: Record<string, string[]>
+}
+
+// ============================================================================
+// ROLE DEFINITION
+// ============================================================================
+
+export type RoleId =
+  | 'villager'
+  | 'imp'
+  | 'washerwoman'
+  | 'librarian'
+  | 'investigator'
+  | 'chef'
+  | 'empath'
+  | 'fortune_teller'
+  | 'undertaker'
+  | 'monk'
+  | 'ravenkeeper'
+  | 'soldier'
+  | 'virgin'
+  | 'slayer'
+  | 'mayor'
+  | 'saint'
+  | 'scarlet_woman'
+  | 'recluse'
+  | 'poisoner'
+  | 'drunk'
+  | 'butler'
+  | 'baron'
+  | 'spy'
+  | 'sweetheart'
+  | 'sage'
+  | 'klutz'
+  | 'mutant'
+  | 'barber'
+  | 'clockmaker'
+  | 'oracle'
+  | 'seamstress'
+  | 'flowergirl'
+  | 'town_crier'
+  | 'mathematician'
+  | 'dreamer'
+  | 'snake_charmer'
+  | 'savant'
+  | 'philosopher'
+  | 'artist'
+  | 'evil_twin'
+  | 'witch'
+  | 'cerenovus'
+  | 'pit_hag'
+  | 'fang_gu'
+  | 'vigormortis'
+  | 'no_dashii'
+  | 'vortox'
+
+export type RoleDefinition = {
+  id: RoleId
+  team: TeamId
+  icon: IconName
+  evilInfoModifier?: EvilInfoModifier
+
+  // Canonical BOTC wake positions used to derive default wake sheets for
+  // imported/custom scripts.
+  canonicalWakeOrder?: {
+    firstNight: number | null
+    otherNights: number | null
+  }
+
+  // Legacy fallback order used only when a script does not provide an explicit
+  // wake sheet entry for this role. Lower numbers wake first.
+  nightOrder: number | null
+
+  // Chaos metric (0-100) — how much chaos this role introduces to the game.
+  // Used by the role pool generator to rank pools by complexity.
+  chaos: number
+
+  // Optional distribution modifier for game setup.
+  // E.g., Baron: { outsider: +2, townsfolk: -2 }
+  distributionModifier?: Partial<Record<TeamId, number>>
+
+  // Optional function to check if this role should wake this night
+  // Used for: first night only, skips first night, conditional abilities, etc.
+  // If not provided, the role always wakes when it's their turn
+  shouldWake?: (game: Game, player: PlayerState) => boolean
+
+  // Effects that are applied to this player at game start
+  initialEffects?: EffectToAdd[]
+
+  // Win conditions this role contributes (checked dynamically)
+  winConditions?: WinConditionCheck[]
+
+  // Declarative list of steps for this role's night action.
+  // Used by NightStepListLayout to render a step list landing page.
+  // If omitted, a single default step is shown.
+  nightSteps?: NightStepDefinition[]
+
+  // Component to show when revealing role to player
+  RoleReveal: React.FC<RoleRevealProps>
+
+  // Component for night action, null if no action needed
+  NightAction: React.FC<NightActionProps> | null
+
+  // Optional setup action shown to the narrator AFTER role assignment
+  // but BEFORE role revelation begins. Used for roles that need
+  // narrator configuration (e.g., Drunk choosing believed role).
+  SetupAction?: React.FC<SetupActionProps>
+}

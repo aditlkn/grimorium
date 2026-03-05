@@ -1,0 +1,44 @@
+import { getCurrentRoleId, getCurrentTeam } from '../../lib/identity'
+import { getTeam } from '../../lib/teams'
+import { useI18n } from '../../lib/i18n'
+import { RoleCard } from './RoleCard'
+import { TeamBackground, CardLink } from './TeamBackground'
+import { cn } from '../../lib/utils'
+import type { RoleRevealProps } from '../../lib/roles/types'
+import { useHandback } from '../context/PlayerFacingContext'
+
+/**
+ * Standard role revelation screen used by most roles.
+ * Shows "You are the..." text, the role card, and "I understand my role" link
+ * on top of the team-themed background.
+ *
+ * Roles that need a custom reveal (e.g., showing extra context or player names)
+ * should compose TeamBackground + RoleCard + CardLink directly instead.
+ */
+export function DefaultRoleReveal({ player, onContinue }: RoleRevealProps) {
+  const { t } = useI18n()
+  const { requestHandback } = useHandback()
+  const roleId = getCurrentRoleId(player)
+  const teamId = getCurrentTeam(player) ?? 'townsfolk'
+  const team = getTeam(teamId)
+  const isEvil = team.isEvil
+
+  return (
+    <TeamBackground teamId={teamId}>
+      <p
+        className={cn(
+          'text-center text-sm uppercase tracking-widest font-semibold mb-5',
+          isEvil ? 'text-red-300/80' : 'text-parchment-300/80',
+        )}
+      >
+        {t.common.youAreThe}
+      </p>
+
+      <RoleCard roleId={roleId} />
+
+      <CardLink onClick={() => requestHandback(onContinue)} isEvil={isEvil}>
+        {t.common.iUnderstandMyRole}
+      </CardLink>
+    </TeamBackground>
+  )
+}

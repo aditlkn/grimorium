@@ -1,0 +1,104 @@
+import { EffectDefinition } from '../../types'
+import {
+  NightFollowUpDefinition,
+  NightFollowUpProps,
+} from '../../../pipeline/types'
+import { getRole } from '../../../roles'
+import { getTeam } from '../../../teams'
+import { RoleCard } from '../../../../components/items/RoleCard'
+import {
+  TeamBackground,
+} from '../../../../components/items/TeamBackground'
+import { PlayerFacingScreen } from '../../../../components/layouts/PlayerFacingScreen'
+import { HandbackCardLink } from '../../../../components/layouts'
+import { useI18n } from '../../../i18n'
+import { cn } from '../../../../lib/utils'
+import { registerEffectTranslations } from '../../../i18n'
+
+import en from './i18n/en'
+import es from './i18n/es'
+
+registerEffectTranslations('pending_role_reveal', 'en', en)
+registerEffectTranslations('pending_role_reveal', 'es', es)
+
+/**
+ * Action component shown when a player's role has changed and they need
+ * to be informed (e.g., Scarlet Woman becoming the Demon).
+ * Shows the player's current RoleCard with a "Your role has changed!" header.
+ * Wrapped in PlayerFacingScreen for hand-device + return-device interstitials.
+ */
+function RoleChangeRevealAction({
+  state,
+  playerId,
+  onComplete,
+}: NightFollowUpProps) {
+  const { t } = useI18n()
+  const player = state.players.find((p) => p.id === playerId)
+  if (!player) return null
+
+  const role = getRole(player.roleId)
+  const teamId = role?.team ?? 'townsfolk'
+  const team = getTeam(teamId)
+
+  const handleComplete = () => {
+    onComplete({
+      entries: [
+        {
+          type: 'role_change_revealed',
+          message: [
+            {
+              type: 'i18n',
+              key: 'history.roleChanged',
+              params: {
+                player: playerId,
+                role: player.roleId,
+              },
+            },
+          ],
+          data: { playerId, roleId: player.roleId },
+        },
+      ],
+      removeEffects: { [playerId]: ['pending_role_reveal'] },
+    })
+  }
+
+  return (
+    <PlayerFacingScreen playerName={player.name}>
+      <TeamBackground teamId={teamId}>
+        <p
+          className={cn(
+            'text-center text-xs uppercase tracking-widest font-semibold mb-4',
+            team.isEvil ? 'text-red-300/80' : 'text-parchment-300/80',
+          )}
+        >
+          {t.game.yourRoleHasChanged}
+        </p>
+
+        <RoleCard roleId={player.roleId} />
+
+        <HandbackCardLink onClick={handleComplete} isEvil={team.isEvil}>
+          {t.common.continue}
+        </HandbackCardLink>
+      </TeamBackground>
+    </PlayerFacingScreen>
+  )
+}
+
+const roleChangeFollowUp: NightFollowUpDefinition = {
+  id: 'role_change_reveal',
+  icon: 'sparkles',
+  getLabel: (t) => t.game.yourRoleHasChanged,
+  placement: 'before_player_action',
+  // If the effect exists on the player, the reveal is needed
+  condition: () => true,
+  ActionComponent: RoleChangeRevealAction,
+}
+
+const definition: EffectDefinition = {
+  id: 'pending_role_reveal',
+  icon: 'sparkles',
+  defaultType: 'pending',
+  nightFollowUps: [roleChangeFollowUp],
+}
+
+export default definition
