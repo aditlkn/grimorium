@@ -30,6 +30,14 @@ export type FuzzResult = {
   trace: string[]
 }
 
+const TRACE_TAIL_LIMIT = 40
+
+function formatTraceTail(trace: string[]): string {
+  const start = Math.max(0, trace.length - TRACE_TAIL_LIMIT)
+  const tail = trace.slice(start)
+  return tail.join('\n')
+}
+
 function mulberry32(seed: number): () => number {
   let t = seed >>> 0
   return () => {
@@ -138,7 +146,7 @@ export function runFuzzSimulation(config: FuzzConfig): FuzzResult {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       throw new Error(
-        `Fuzz invariant failed (seed=${config.seed}, step=${stepsExecuted}, label=${label})\nTrace:\n${trace.join('\n')}\n${message}`,
+        `Fuzz invariant failed (seed=${config.seed}, step=${stepsExecuted}, label=${label})\nTraceTail(last ${TRACE_TAIL_LIMIT}):\n${formatTraceTail(trace)}\n${message}`,
       )
     }
   }

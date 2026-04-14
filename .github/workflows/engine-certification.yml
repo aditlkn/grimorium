@@ -1,0 +1,53 @@
+name: Engine Certification
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 2 * * *'
+
+jobs:
+  pr-gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fast test gate
+        run: npm run test:fast
+
+      - name: Fuzz smoke gate
+        run: npm run test:fuzz:smoke
+
+  nightly-certification:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Certification suite
+        run: npm run test:certify
+
+      - name: Fuzz nightly
+        run: npm run test:fuzz:nightly
+
