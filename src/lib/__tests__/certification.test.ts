@@ -36,7 +36,7 @@ describe('character-universe certification scenarios', () => {
                 {
                   playerId: snakeCharmer.id,
                   newRoleId: 'poisoner',
-                  queuePolicy: 'act_immediately_force',
+                  queuePolicy: 'act_immediately',
                   reveal: 'pending',
                 },
               ],

@@ -163,7 +163,6 @@ export function runScenario(spec: ScenarioSpec): ScenarioContext {
             | 'minion_info'
             | 'demon_info'
             | 'demon_bluffs'
-            | 'demon_creation_deaths'
             | undefined,
         )
         break
