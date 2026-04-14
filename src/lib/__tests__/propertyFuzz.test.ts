@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runFuzzSimulation } from '../testing/fuzz'
+import { runFuzzSimulation, summarizeFuzzCoverage } from '../testing/fuzz'
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback
@@ -32,6 +32,7 @@ describe('property fuzz: engine invariants', () => {
       ? parsePositiveInt(env.FUZZ_SEED, 1)
       : undefined
     const seeds = seedsForRun(runs, replaySeed)
+    const enforceCoverage = env.FUZZ_ENFORCE_ROLE_COVERAGE === '1'
 
     const results = seeds.map((seed) => {
       try {
@@ -54,6 +55,29 @@ describe('property fuzz: engine invariants', () => {
     expect(results.length).toBe(seeds.length)
     for (const result of results) {
       expect(result.stepsExecuted).toBeGreaterThan(0)
+    }
+
+    const coverage = summarizeFuzzCoverage(results)
+    const sortedUncovered = [...coverage.uncoveredRoles].sort()
+    const sortedCoverageEntries = Object.entries(coverage.roleCoverage).sort((a, b) =>
+      a[0].localeCompare(b[0]),
+    )
+    console.info(
+      `FUZZ coverage summary (runs=${results.length}, maxSteps=${maxSteps}): ${sortedCoverageEntries
+        .map(([roleId, hits]) => `${roleId}:${hits}`)
+        .join(', ')}`,
+    )
+    if (sortedUncovered.length > 0) {
+      console.info(`FUZZ uncovered roles: ${sortedUncovered.join(', ')}`)
+    } else {
+      console.info('FUZZ uncovered roles: none')
+    }
+
+    if (enforceCoverage) {
+      expect(
+        sortedUncovered,
+        `Fuzz coverage missing roles. Re-run with higher FUZZ_RUNS/FUZZ_MAX_STEPS. Replay seed example: ${replayCommand(1, maxSteps)}`,
+      ).toEqual([])
     }
   })
 })

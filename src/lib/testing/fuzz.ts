@@ -1,4 +1,5 @@
 import {
+  applyNightAction,
   executeAtEndOfDay,
   getNextStep,
   getVoteThreshold,
@@ -9,14 +10,13 @@ import {
   startDay,
   startNight,
 } from '../game'
-import { applyPipelineChanges, resolveIntent } from '../pipeline'
-import { getCurrentTeam } from '../identity'
 import { getAlivePlayers, type Game } from '../types'
 import type { RoleId } from '../roles/types'
 import { ROLE_TEST_CONTRACTS } from './roleContracts'
 import { assertEngineInvariants } from './invariants'
 import { deriveWakeOrderFromRoleIds } from '../scripts/wakeOrder'
 import { createGame } from '../game'
+import { buildTransformationStateChanges } from '../transformations'
 
 export type FuzzConfig = {
   seed: number
@@ -28,6 +28,13 @@ export type FuzzResult = {
   seed: number
   stepsExecuted: number
   trace: string[]
+  roleCoverage: Record<RoleId, number>
+  uncoveredRoles: RoleId[]
+}
+
+export type FuzzCoverageSummary = {
+  roleCoverage: Record<RoleId, number>
+  uncoveredRoles: RoleId[]
 }
 
 const TRACE_TAIL_LIMIT = 40
@@ -65,6 +72,28 @@ function sampleRoles(rng: () => number, playerCount: number): RoleId[] {
   return Array.from(picked)
 }
 
+function toKnownRoleId(roleId: string): RoleId | null {
+  return roleId in ROLE_TEST_CONTRACTS ? (roleId as RoleId) : null
+}
+
+function emptyCoverageMap(): Record<RoleId, number> {
+  const roleIds = Object.keys(ROLE_TEST_CONTRACTS) as RoleId[]
+  return Object.fromEntries(roleIds.map((roleId) => [roleId, 0])) as Record<
+    RoleId,
+    number
+  >
+}
+
+function markCovered(
+  roleCoverage: Record<RoleId, number>,
+  roleId: string | null | undefined,
+) {
+  if (!roleId) return
+  const known = toKnownRoleId(roleId)
+  if (!known) return
+  roleCoverage[known] += 1
+}
+
 function createFuzzGame(seed: number, playerCount?: number): Game {
   const rng = mulberry32(seed)
   const count = playerCount ?? randomInt(rng, 5, 10)
@@ -89,54 +118,139 @@ function createFuzzGame(seed: number, playerCount?: number): Game {
   return createGame(`Fuzz ${seed}`, scriptId, players, scriptSnapshot)
 }
 
-function tryResolveRandomKill(
+function tryRandomNomination(
   game: Game,
   rng: () => number,
-  sourcePlayerId: string,
-): Game {
+): { game: Game; coveredRoleIds: RoleId[] } {
   const state = game.history.at(-1)?.stateAfter
-  if (!state) return game
-
+  if (!state) return { game, coveredRoleIds: [] }
   const alive = getAlivePlayers(state)
-  if (alive.length === 0) return game
-
-  const target = pickOne(rng, alive)
-  const result = resolveIntent(
-    {
-      type: 'kill',
-      sourceId: sourcePlayerId,
-      targetId: target.id,
-      cause: 'fuzz_night_kill',
-    },
-    state,
-    game,
-  )
-
-  if (result.type === 'needs_input') return game
-  return applyPipelineChanges(game, result.stateChanges)
-}
-
-function tryRandomNomination(game: Game, rng: () => number): Game {
-  const state = game.history.at(-1)?.stateAfter
-  if (!state) return game
-  const alive = getAlivePlayers(state)
-  if (alive.length < 2) return game
+  if (alive.length < 2) return { game, coveredRoleIds: [] }
 
   const nominator = pickOne(rng, alive)
   const nomineePool = alive.filter((player) => player.id !== nominator.id)
-  if (nomineePool.length === 0) return game
+  if (nomineePool.length === 0) return { game, coveredRoleIds: [] }
   const nominee = pickOne(rng, nomineePool)
 
   let next = nominate(game, nominator.id, nominee.id)
   const threshold = getVoteThreshold(next.history.at(-1)!.stateAfter)
   const voteCount = randomInt(rng, 0, Math.max(threshold + 1, alive.length))
   next = resolveVote(next, nominee.id, voteCount)
-  return next
+  return {
+    game: next,
+    coveredRoleIds: [
+      toKnownRoleId(nominator.roleId),
+      toKnownRoleId(nominee.roleId),
+    ].filter(Boolean) as RoleId[],
+  }
+}
+
+function tryRandomTransformation(
+  game: Game,
+  rng: () => number,
+  sourcePlayerId: string,
+): { game: Game; coveredRoleIds: RoleId[] } {
+  const state = game.history.at(-1)?.stateAfter
+  if (!state || state.players.length === 0) return { game, coveredRoleIds: [] }
+
+  const source = state.players.find((player) => player.id === sourcePlayerId)
+  const target = pickOne(rng, state.players)
+  const currentRole = toKnownRoleId(target.roleId)
+  if (!currentRole) return { game, coveredRoleIds: [] }
+
+  const allRoles = Object.keys(ROLE_TEST_CONTRACTS) as RoleId[]
+  const candidates = allRoles.filter((roleId) => roleId !== currentRole)
+  if (candidates.length === 0) return { game, coveredRoleIds: [] }
+
+  const newRole = pickOne(rng, candidates)
+  const changes = buildTransformationStateChanges(state, {
+    kind: 'role_change',
+    source: {
+      cause: 'fuzz_transform',
+      playerId: sourcePlayerId,
+      roleId: source ? source.roleId : undefined,
+    },
+    targets: [
+      {
+        playerId: target.id,
+        newRoleId: newRole,
+        reveal: 'pending',
+        queuePolicy: 'skip_if_window_passed',
+      },
+    ],
+  })
+
+  return {
+    game: applyNightAction(game, {
+      entries: changes.entries,
+      stateUpdates: changes.stateUpdates,
+      addEffects: changes.addEffects,
+      removeEffects: changes.removeEffects,
+      changeRoles: changes.changeRoles,
+      changeAlignments: changes.changeAlignments,
+    }),
+    coveredRoleIds: [
+      ...(source ? [toKnownRoleId(source.roleId)] : []),
+      currentRole,
+      newRole,
+    ].filter(Boolean) as RoleId[],
+  }
+}
+
+function tryRandomStatusInjection(
+  game: Game,
+  rng: () => number,
+  sourcePlayerId: string,
+): { game: Game; coveredRoleIds: RoleId[] } {
+  const state = game.history.at(-1)?.stateAfter
+  if (!state || state.players.length === 0) return { game, coveredRoleIds: [] }
+
+  const target = pickOne(rng, state.players)
+  const source = state.players.find((player) => player.id === sourcePlayerId)
+  const statusType = rng() < 0.5 ? 'poisoned' : 'drunk'
+  const targetRole = toKnownRoleId(target.roleId)
+
+  return {
+    game: applyNightAction(game, {
+      entries: [],
+      addEffects: {
+        [target.id]: [
+          {
+            type: statusType,
+            sourcePlayerId,
+            expiresAt: 'end_of_day',
+          },
+        ],
+      },
+    }),
+    coveredRoleIds: [
+      ...(source ? [toKnownRoleId(source.roleId)] : []),
+      targetRole,
+    ].filter(Boolean) as RoleId[],
+  }
+}
+
+export function summarizeFuzzCoverage(results: FuzzResult[]): FuzzCoverageSummary {
+  const summary = emptyCoverageMap()
+  for (const result of results) {
+    for (const [roleId, hits] of Object.entries(result.roleCoverage)) {
+      const known = toKnownRoleId(roleId)
+      if (!known) continue
+      summary[known] += hits
+    }
+  }
+
+  const uncoveredRoles = (Object.keys(summary) as RoleId[]).filter(
+    (roleId) => summary[roleId] === 0,
+  )
+
+  return { roleCoverage: summary, uncoveredRoles }
 }
 
 export function runFuzzSimulation(config: FuzzConfig): FuzzResult {
   const rng = mulberry32(config.seed)
   const trace: string[] = []
+  const roleCoverage = emptyCoverageMap()
   let game = createFuzzGame(config.seed, config.playerCount)
   let stepsExecuted = 0
 
@@ -158,6 +272,9 @@ export function runFuzzSimulation(config: FuzzConfig): FuzzResult {
     if (step.type === 'game_over') break
 
     if (step.type === 'role_reveal') {
+      const state = game.history.at(-1)?.stateAfter
+      const player = state?.players.find((candidate) => candidate.id === step.playerId)
+      markCovered(roleCoverage, player?.roleId)
       game = markRoleRevealed(game, step.playerId)
       stepsExecuted++
       guard('role_reveal')
@@ -182,15 +299,23 @@ export function runFuzzSimulation(config: FuzzConfig): FuzzResult {
     }
 
     if (step.type === 'night_action' || step.type === 'night_action_skip') {
-      if (
-        step.type === 'night_action' &&
-        rng() < 0.3 &&
-        !step.systemStepId
-      ) {
+      markCovered(roleCoverage, step.roleId)
+      if (step.type === 'night_action' && !step.systemStepId) {
         const state = game.history.at(-1)?.stateAfter
         const source = state?.players.find((player) => player.id === step.playerId)
-        if (source && getCurrentTeam(source) === 'demon') {
-          game = tryResolveRandomKill(game, rng, source.id)
+        if (rng() < 0.16) {
+          const transformResult = tryRandomTransformation(game, rng, source?.id ?? step.playerId)
+          game = transformResult.game
+          for (const roleId of transformResult.coveredRoleIds) {
+            markCovered(roleCoverage, roleId)
+          }
+        }
+        if (rng() < 0.18) {
+          const statusResult = tryRandomStatusInjection(game, rng, source?.id ?? step.playerId)
+          game = statusResult.game
+          for (const roleId of statusResult.coveredRoleIds) {
+            markCovered(roleCoverage, roleId)
+          }
         }
       }
       game = skipNightAction(game, step.roleId, step.playerId, step.systemStepId)
@@ -201,7 +326,11 @@ export function runFuzzSimulation(config: FuzzConfig): FuzzResult {
 
     if (step.type === 'day') {
       if (rng() < 0.65) {
-        game = tryRandomNomination(game, rng)
+        const nominationResult = tryRandomNomination(game, rng)
+        game = nominationResult.game
+        for (const roleId of nominationResult.coveredRoleIds) {
+          markCovered(roleCoverage, roleId)
+        }
         stepsExecuted++
         guard('nomination_vote')
       }
@@ -219,9 +348,15 @@ export function runFuzzSimulation(config: FuzzConfig): FuzzResult {
     }
   }
 
+  const uncoveredRoles = (Object.keys(roleCoverage) as RoleId[]).filter(
+    (roleId) => roleCoverage[roleId] === 0,
+  )
+
   return {
     seed: config.seed,
     stepsExecuted,
     trace,
+    roleCoverage,
+    uncoveredRoles,
   }
 }
