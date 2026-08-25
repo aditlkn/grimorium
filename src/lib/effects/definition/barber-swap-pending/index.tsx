@@ -1,21 +1,20 @@
 import { EffectDefinition } from '../../types'
 import {
-  DayActionDefinition,
-  DayActionProps,
-  DayActionResult,
+  NightFollowUpResult,
   NightFollowUpDefinition,
   NightFollowUpProps,
 } from '../../../pipeline/types'
 import { hasEffect } from '../../../types'
+import { getCurrentTeam } from '../../../identity'
 import { buildTransformationStateChanges } from '../../../transformations'
 import { StorytellerChoiceScreen } from '../../../../components/screens/SectsAndVioletsActionScreens'
 
 function buildSwapResult(
-  state: DayActionProps['state'],
+  state: NightFollowUpProps['state'],
   barberId: string,
   [firstId, secondId]: string[],
 ): Pick<
-  DayActionResult,
+  NightFollowUpResult,
   'entries' | 'changeRoles' | 'addEffects' | 'removeEffects'
 > | null {
   const first = state.players.find((player) => player.id === firstId)
@@ -47,35 +46,8 @@ function buildSwapResult(
     entries: transformation.entries,
     changeRoles: transformation.changeRoles,
     addEffects: transformation.addEffects,
-    removeEffects: {
-      ...transformation.removeEffects,
-      [barberId]: ['barber_swap_pending'],
-    },
+    removeEffects: transformation.removeEffects,
   }
-}
-
-function BarberResolution({
-  state,
-  playerId,
-  onComplete,
-  onBack,
-}: DayActionProps) {
-  return (
-    <StorytellerChoiceScreen
-      state={state}
-      icon='shuffle'
-      title='Barber'
-      description='Choose two players to swap characters.'
-      confirmLabel='Swap these characters'
-      players={state.players}
-      selectionCount={2}
-      onBack={onBack}
-      onConfirm={(selectedIds) => {
-        const result = buildSwapResult(state, playerId, selectedIds)
-        if (result) onComplete(result)
-      }}
-    />
-  )
 }
 
 function BarberNightFollowUp({
@@ -83,38 +55,74 @@ function BarberNightFollowUp({
   playerId,
   onComplete,
 }: NightFollowUpProps) {
+  const demon = state.players.find((player) => player.id === playerId)
+  const pending = demon?.effects.find((effect) => effect.type === 'barber_swap_pending')
+  const barberId =
+    typeof pending?.data?.barberId === 'string'
+      ? (pending.data.barberId as string)
+      : null
+
+  const clearPending = () =>
+    onComplete({
+      entries: [
+        {
+          type: 'night_action',
+          message: [
+            {
+              type: 'text',
+              content: `${demon?.name ?? 'Demon'} chose not to swap with Barber.`,
+            },
+          ],
+          data: {
+            roleId: 'barber',
+            playerId,
+            action: 'barber_no_swap',
+            sourcePlayerId: barberId,
+          },
+        },
+      ],
+      removeEffects: {
+        [playerId]: ['barber_swap_pending'],
+      },
+    })
+
   return (
     <StorytellerChoiceScreen
       state={state}
       icon='shuffle'
       title='Barber'
-      description='Choose two players to swap characters.'
-      confirmLabel='Swap these characters'
+      description='Wake the Demon: choose two players to swap, or skip.'
+      confirmLabel='Swap'
+      secondaryActionLabel='Skip'
+      onSecondaryAction={clearPending}
       players={state.players}
       selectionCount={2}
       onConfirm={(selectedIds) => {
-        const result = buildSwapResult(state, playerId, selectedIds)
-        if (result) onComplete(result)
+        if (!barberId) {
+          clearPending()
+          return
+        }
+        const result = buildSwapResult(state, barberId, selectedIds)
+        if (!result) return
+        onComplete({
+          ...result,
+          removeEffects: {
+            ...result.removeEffects,
+            [playerId]: ['barber_swap_pending'],
+          },
+        })
       }}
     />
   )
 }
 
-const dayAction: DayActionDefinition = {
-  id: 'barber_swap',
-  icon: 'shuffle',
-  category: 'resolution',
-  getLabel: () => 'Resolve Barber',
-  getDescription: () => 'Choose two players to swap after Barber dies.',
-  condition: (player) => hasEffect(player, 'barber_swap_pending'),
-  ActionComponent: BarberResolution,
-}
-
 const nightFollowUp: NightFollowUpDefinition = {
   id: 'barber_swap',
   icon: 'shuffle',
-  getLabel: () => 'Resolve Barber',
-  condition: (player) => hasEffect(player, 'barber_swap_pending'),
+  getLabel: () => 'Barber (Demon choice)',
+  condition: (player) =>
+    hasEffect(player, 'barber_swap_pending') && getCurrentTeam(player) === 'demon',
+  placement: 'before_player_action',
   ActionComponent: BarberNightFollowUp,
 }
 
@@ -122,7 +130,6 @@ const definition: EffectDefinition = {
   id: 'barber_swap_pending',
   icon: 'shuffle',
   defaultType: 'pending',
-  dayActions: [dayAction],
   nightFollowUps: [nightFollowUp],
 }
 

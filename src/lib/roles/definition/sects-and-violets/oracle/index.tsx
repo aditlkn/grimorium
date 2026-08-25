@@ -41,7 +41,11 @@ const definition: RoleDefinition = {
     const falseInfoMode = getFalseInfoMode(state, player)
     const malfunctioning = shouldForceFalseInfo(state, player)
     const [shownCount, setShownCount] = useState(actualCount)
-    const [phase, setPhase] = useState<'configure' | 'show_result'>('configure')
+    const [phase, setPhase] = useState<'configure' | 'show_result'>(
+      malfunctioning ? 'configure' : 'show_result',
+    )
+
+    const revealCount = malfunctioning ? shownCount : actualCount
 
     const complete = () => {
       onComplete({
@@ -51,14 +55,14 @@ const definition: RoleDefinition = {
             message: [
               {
                 type: 'text',
-                content: `${player.name} learned that ${shownCount} dead players are evil.`,
+                content: `${player.name} learned that ${revealCount} dead players are evil.`,
               },
             ],
             data: {
               roleId: 'oracle',
               playerId: player.id,
               action: 'oracle_info',
-              deadEvilCount: shownCount,
+              deadEvilCount: revealCount,
               ...(malfunctioning ? { malfunctioned: true, actualCount } : {}),
             },
           },
@@ -87,10 +91,10 @@ const definition: RoleDefinition = {
       <PlayerNumberRevealScreen
         playerName={player.name}
         icon='bookMarked'
-        title={roleT.infoTitle}
-        subtitle={roleT.name}
-        label={roleT.countLabel}
-        value={shownCount}
+        title={roleT.countLabel}
+        subtitle={player.name}
+        label={roleT.infoTitle}
+        value={revealCount}
         onComplete={complete}
       />
     )

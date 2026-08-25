@@ -1,6 +1,7 @@
 import { EffectDefinition } from '../../types'
 import { IntentHandler, KillIntent } from '../../../pipeline/types'
 import { getCurrentTeam } from '../../../identity'
+import { isAlive } from '../../../types'
 import { buildTransformationStateChanges } from '../../../transformations'
 
 const fangGuJumpHandler: IntentHandler = {
@@ -14,7 +15,7 @@ const fangGuJumpHandler: IntentHandler = {
     const target = state.players.find((player) => player.id === killIntent.targetId)
     if (!target) return false
 
-    return getCurrentTeam(target) === 'outsider'
+    return isAlive(target) && getCurrentTeam(target) === 'outsider'
   },
   handle: (intent, effectPlayer, state) => {
     const killIntent = intent as KillIntent
