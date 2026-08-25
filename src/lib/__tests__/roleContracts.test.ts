@@ -78,8 +78,9 @@ describe('role contract registry', () => {
           type: 'resolve_intent',
           intent: {
             type: 'kill',
-            sourcePlayerId: 'missing-player',
-            targetPlayerId: 'also-missing',
+            sourceId: 'missing-player',
+            targetId: 'also-missing',
+            cause: 'test-intent',
           },
         },
       ],
