@@ -151,6 +151,7 @@ type Props = {
   onContinue: (gameId: string) => void
   onLoadGame: (gameId: string) => void
   onRolesLibrary: () => void
+  onScriptLibrary: () => void
   onHowToPlay: () => void
 }
 
@@ -178,6 +179,7 @@ export function MainMenu({
   onContinue,
   onLoadGame,
   onRolesLibrary,
+  onScriptLibrary,
   onHowToPlay,
 }: Props) {
   const { language, t } = useI18n()
@@ -502,6 +504,15 @@ export function MainMenu({
                   className='text-sm text-parchment-400 hover:text-parchment-200 underline underline-offset-4 decoration-1 decoration-parchment-500/40 transition-colors tracking-wider'
                 >
                   {t.mainMenu.rolesLibrary}
+                </button>
+
+                <span className='text-parchment-500/40'>·</span>
+
+                <button
+                  onClick={onScriptLibrary}
+                  className='text-sm text-parchment-400 hover:text-parchment-200 underline underline-offset-4 decoration-1 decoration-parchment-500/40 transition-colors tracking-wider'
+                >
+                  Script Library
                 </button>
 
                 {games.length > 0 && (

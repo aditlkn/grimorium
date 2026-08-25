@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import { getRole } from '../../lib/roles'
-import { SCRIPTS } from '../../lib/scripts'
+import { getAllRoles, getRole } from '../../lib/roles'
 import { RoleId } from '../../lib/roles/types'
 import { getTeam, TeamId } from '../../lib/teams'
 import { useI18n, getRoleName, getRoleDescription } from '../../lib/i18n'
@@ -29,7 +28,7 @@ export function RolesLibrary({
 }: Props) {
   const { t, language } = useI18n()
 
-  const scriptRoles = roleIds ?? SCRIPTS['trouble-brewing'].roles
+  const scriptRoles = roleIds ?? getAllRoles().map((role) => role.id)
 
   // Group roles by team
   const rolesByTeam = TEAM_ORDER.map((teamId) => {

@@ -24,6 +24,8 @@ type StorytellerChoiceScreenProps = {
   disabled?: Set<string>
   groups?: PlayerGroup[]
   onBack?: () => void
+  secondaryActionLabel?: string
+  onSecondaryAction?: () => void
   onConfirm: (selectedIds: string[]) => void
 }
 
@@ -54,6 +56,8 @@ export function StorytellerChoiceScreen({
   disabled,
   groups,
   onBack,
+  secondaryActionLabel,
+  onSecondaryAction,
   onConfirm,
 }: StorytellerChoiceScreenProps) {
   const { t } = useI18n()
@@ -122,16 +126,28 @@ export function StorytellerChoiceScreen({
       </div>
 
       <ScreenFooter borderColor={theme.footer}>
-        <Button
-          onClick={() => onConfirm(selectedIds)}
-          disabled={!canConfirm}
-          fullWidth
-          size='lg'
-          variant={theme.button}
-        >
-          <Icon name={icon} size='md' className='mr-2' />
-          {confirmLabel}
-        </Button>
+        <div className='flex w-full gap-3'>
+          {onSecondaryAction && secondaryActionLabel ? (
+            <Button
+              onClick={onSecondaryAction}
+              fullWidth
+              size='lg'
+              variant='secondary'
+            >
+              {secondaryActionLabel}
+            </Button>
+          ) : null}
+          <Button
+            onClick={() => onConfirm(selectedIds)}
+            disabled={!canConfirm}
+            fullWidth
+            size='lg'
+            variant={theme.button}
+          >
+            <Icon name={icon} size='md' className='mr-2' />
+            {confirmLabel}
+          </Button>
+        </div>
       </ScreenFooter>
     </div>
   )

@@ -80,6 +80,8 @@ const es: Translations = {
 
     step3Title: 'Nueva Partida',
     step3Subtitle: 'Paso 3: Asignar roles (opcional)',
+    step3GrimoireSubtitle:
+      'Paso 3: Asignar asientos, nombres y roles desde el grimorio',
     assignmentInfo:
       'Opcionalmente asigna roles específicos a jugadores. Los jugadores sin asignar reciben roles aleatorios.',
     resetToRandom: 'Restablecer todo a aleatorio',
@@ -93,6 +95,15 @@ const es: Translations = {
     rolesRandomlyAssigned: 'Los roles se asignarán aleatoriamente',
     customizeAssignments: 'Personalizar Asignaciones',
     tapToAssign: 'Toca un jugador para asignar un rol específico',
+    assignInGrimoire: 'Asignar en el Grimorio',
+    grimoireAssignmentHelp:
+      'Coloca cada rol seleccionado directamente en un asiento y luego escribe el nombre del jugador de ese asiento antes de iniciar la partida.',
+    selectSeatToEdit: 'Selecciona un asiento del grimorio para editarlo.',
+    chooseRoleForSeat: 'Elige el rol para este asiento',
+    allSeatsNeedNames: 'Cada asiento necesita un nombre de jugador.',
+    allSeatsNeedRoles:
+      'Cada asiento necesita un rol asignado de la bolsa seleccionada.',
+    allRolesPlaced: 'Todos los roles seleccionados ya están colocados.',
   },
 
   game: {

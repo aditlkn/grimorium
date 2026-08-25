@@ -1036,6 +1036,11 @@ export function getBlockStatus(game: Game): BlockStatus {
         playerName: entry.data.nomineeName as string,
         voteCount: entry.data.voteCount as number,
       }
+      continue
+    }
+
+    if (entry.type === 'vote' && entry.data.clearsBlock === true) {
+      block = null
     }
   }
 
