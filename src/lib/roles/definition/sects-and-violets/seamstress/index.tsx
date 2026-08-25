@@ -63,6 +63,10 @@ const definition: RoleDefinition = {
     const playerNames = selectedIds.map(
       (id) => state.players.find((candidate) => candidate.id === id)?.name ?? t.ui.unknownPlayer,
     )
+    const selectablePlayers = useMemo(
+      () => state.players.filter((candidate) => candidate.id !== player.id),
+      [player.id, state.players],
+    )
 
     const finishWith = (resultValue: boolean) => {
       const result: NightActionResult = {
@@ -143,9 +147,10 @@ const definition: RoleDefinition = {
 
           <div className='flex-1 px-4 pb-4 max-w-lg mx-auto w-full overflow-y-auto'>
             <PlayerPickerList
-              players={state.players}
+              players={selectablePlayers}
               selected={selectedIds}
               onSelect={(playerId) => {
+                if (playerId === player.id) return
                 setSelectedIds((current) => {
                   if (current.includes(playerId)) {
                     return current.filter((id) => id !== playerId)

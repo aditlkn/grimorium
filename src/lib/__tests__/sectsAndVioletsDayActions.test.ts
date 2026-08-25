@@ -127,4 +127,44 @@ describe('Sects & Violets day-phase edge cases', () => {
       ),
     ).toBe(true)
   })
+
+  it('adds Klutz pending resolution when a witch-cursed Klutz nominates', () => {
+    const klutz = addEffectTo(
+      addEffectTo(makePlayer({ id: 'klutz', roleId: 'klutz' }), 'klutz_trigger'),
+      'witch_curse',
+      { witchId: 'witch' },
+      'end_of_day',
+    )
+    const state = makeState({
+      phase: 'day',
+      round: 2,
+      players: [
+        klutz,
+        makePlayer({ id: 'nominee', roleId: 'chef' }),
+        makePlayer({ id: 'witch', roleId: 'witch' }),
+      ],
+    })
+    const game = makeGame(state)
+    const intent: NominateIntent = {
+      type: 'nominate',
+      nominatorId: 'klutz',
+      nomineeId: 'nominee',
+    }
+
+    const result = resolveIntent(intent, state, game)
+    expect(result.type).toBe('resolved')
+    if (result.type !== 'resolved') return
+
+    const updated = applyPipelineChanges(game, result.stateChanges)
+    const updatedState = getCurrentState(updated)
+    const updatedKlutz = updatedState.players.find((player) => player.id === 'klutz')!
+
+    expect(hasEffect(updatedKlutz, 'dead')).toBe(true)
+    expect(hasEffect(updatedKlutz, 'klutz_choice_pending')).toBe(true)
+    expect(
+      getAvailableDayActions(updatedState, mockT, 'resolution').some(
+        (action) => action.playerId === 'klutz' && action.id.startsWith('klutz_resolve'),
+      ),
+    ).toBe(true)
+  })
 })

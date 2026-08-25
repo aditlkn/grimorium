@@ -77,6 +77,7 @@ export type Translations = {
 
     step3Title: string
     step3Subtitle: string
+    step3GrimoireSubtitle: string
     assignmentInfo: string
     resetToRandom: string
     playerAssignments: string
@@ -87,6 +88,13 @@ export type Translations = {
     rolesRandomlyAssigned: string
     customizeAssignments: string
     tapToAssign: string
+    assignInGrimoire: string
+    grimoireAssignmentHelp: string
+    selectSeatToEdit: string
+    chooseRoleForSeat: string
+    allSeatsNeedNames: string
+    allSeatsNeedRoles: string
+    allRolesPlaced: string
   }
 
   // Game Phases

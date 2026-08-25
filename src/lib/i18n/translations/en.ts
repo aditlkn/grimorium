@@ -80,6 +80,8 @@ const en: Translations = {
 
     step3Title: 'New Game',
     step3Subtitle: 'Step 3: Assign roles (optional)',
+    step3GrimoireSubtitle:
+      'Step 3: Assign seats, player names, and roles from the grimoire',
     assignmentInfo:
       'Optionally assign specific roles to players. Unassigned players get random roles from the pool.',
     resetToRandom: 'Reset all to random',
@@ -93,6 +95,14 @@ const en: Translations = {
     rolesRandomlyAssigned: 'Roles will be randomly assigned to players',
     customizeAssignments: 'Customize Assignments',
     tapToAssign: 'Tap a player to assign a specific role',
+    assignInGrimoire: 'Assign in Grimoire',
+    grimoireAssignmentHelp:
+      'Place each selected role directly onto a seat, then enter the player name for that seat before starting the game.',
+    selectSeatToEdit: 'Select a seat in the grimoire to edit it.',
+    chooseRoleForSeat: 'Choose role for this seat',
+    allSeatsNeedNames: 'Every seat needs a player name.',
+    allSeatsNeedRoles: 'Every seat needs an assigned role from the selected bag.',
+    allRolesPlaced: 'All selected roles are placed.',
   },
 
   game: {

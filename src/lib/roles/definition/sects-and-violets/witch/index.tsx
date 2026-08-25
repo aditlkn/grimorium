@@ -21,8 +21,14 @@ const definition: RoleDefinition = {
   icon: 'sparkles',
   nightOrder: 6,
   chaos: 56,
-  shouldWake: (game, player) =>
-    isAlive(player) || canActWhileDeadUnderVigormortis(game, player),
+  shouldWake: (game, player) => {
+    const state = game.history.at(-1)?.stateAfter
+    const aliveCount = state
+      ? state.players.filter((candidate) => isAlive(candidate)).length
+      : 0
+    if (aliveCount <= 3) return false
+    return isAlive(player) || canActWhileDeadUnderVigormortis(game, player)
+  },
 
   RoleReveal: DefaultRoleReveal,
 

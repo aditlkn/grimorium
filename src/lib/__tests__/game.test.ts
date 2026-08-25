@@ -15,6 +15,8 @@ import {
   checkWinCondition,
   getNominatorsToday,
   getNomineesToday,
+  getBlockStatus,
+  executeAtEndOfDay,
 } from '../game'
 import { applyPipelineChanges, resolveIntent } from '../pipeline'
 import type { ScriptDefinition } from '../scripts'
@@ -1201,6 +1203,22 @@ describe('resolveVote', () => {
     // Should have a clearsBlock entry
     const clearEntry = voteEntries.find((e) => e.data.clearsBlock === true)
     expect(clearEntry).toBeDefined()
+    expect(getBlockStatus(afterSecond)).toBeNull()
+  })
+
+  it('does not execute anyone at end of day after a tied top vote', () => {
+    const players = makeStandardPlayers()
+    const game = makeDayGame(players)
+
+    const afterFirst = resolveVote(game, 'p5', 3, ['p1', 'p2', 'p3'])
+    const afterSecond = resolveVote(afterFirst, 'p4', 3, ['p1', 'p2', 'p5'])
+    const afterEndDay = executeAtEndOfDay(afterSecond)
+
+    expect(getBlockStatus(afterSecond)).toBeNull()
+    expect(afterEndDay.history).toHaveLength(afterSecond.history.length)
+
+    const state = getCurrentState(afterEndDay)
+    expect(state.players.some((player) => hasEffect(player, 'dead'))).toBe(false)
   })
 
   it('fails with 0 votes', () => {

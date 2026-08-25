@@ -38,7 +38,9 @@ const definition: RoleDefinition = {
     const falseInfoMode = getFalseInfoMode(state, player)
     const malfunctioning = shouldForceFalseInfo(state, player)
     const [shownValue, setShownValue] = useState(actualValue)
-    const [phase, setPhase] = useState<'configure' | 'show_result'>('configure')
+    const [phase, setPhase] = useState<'configure' | 'show_result'>(
+      malfunctioning ? 'configure' : 'show_result',
+    )
 
     const complete = () => {
       onComplete({
