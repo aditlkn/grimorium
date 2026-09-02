@@ -6,7 +6,7 @@ import {
 } from '../../../pipeline/types'
 import { hasEffect, getAlivePlayers } from '../../../types'
 import { registerEffectTranslations } from '../../../i18n'
-import { getCurrentRoleId, getCurrentTeam } from '../../../identity'
+import { getCurrentRoleId, getCurrentRoleTeam } from '../../../identity'
 import { buildTransformationStateChanges } from '../../../transformations'
 
 import en from './i18n/en'
@@ -53,7 +53,7 @@ const demonSuccessorHandler: IntentHandler = {
     // The target must be a Demon
     const target = state.players.find((p) => p.id === targetId)
     if (!target) return false
-    if (getCurrentTeam(target) !== 'demon') return false
+    if (getCurrentRoleTeam(target) !== 'demon') return false
 
     // The successor (effect holder) must be alive
     if (hasEffect(effectPlayer, 'dead')) return false

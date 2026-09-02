@@ -24,7 +24,7 @@ registerRoleTranslations('cerenovus', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'cerenovus',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'drama',
   nightOrder: 7,
   chaos: 68,

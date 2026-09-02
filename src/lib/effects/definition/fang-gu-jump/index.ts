@@ -1,6 +1,7 @@
 import { EffectDefinition } from '../../types'
 import { IntentHandler, KillIntent } from '../../../pipeline/types'
-import { getCurrentTeam } from '../../../identity'
+import { getCurrentRoleTeam } from '../../../identity'
+import { isAlive } from '../../../types'
 import { buildTransformationStateChanges } from '../../../transformations'
 
 const fangGuJumpHandler: IntentHandler = {
@@ -14,7 +15,7 @@ const fangGuJumpHandler: IntentHandler = {
     const target = state.players.find((player) => player.id === killIntent.targetId)
     if (!target) return false
 
-    return getCurrentTeam(target) === 'outsider'
+    return isAlive(target) && getCurrentRoleTeam(target) === 'outsider'
   },
   handle: (intent, effectPlayer, state) => {
     const killIntent = intent as KillIntent
@@ -35,7 +36,8 @@ const fangGuJumpHandler: IntentHandler = {
           playerId: target.id,
           newRoleId: 'fang_gu',
           reveal: 'pending',
-          includeNewRoleInitialEffects: true,
+          queuePolicy: 'skip_if_window_passed',
+          includeNewRoleInitialEffects: false,
         },
       ],
     })

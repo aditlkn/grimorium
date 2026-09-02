@@ -14,6 +14,8 @@ type Props = {
   onShowCharacters: () => void
   onTakeNotes: () => void
   onShowHistory: () => void
+  onRevealAlignment: () => void
+  onResolveMadness?: () => void
 }
 
 function MenuAction({ action }: { action: Action }) {
@@ -37,6 +39,8 @@ export function StorytellerFabMenu({
   onShowCharacters,
   onTakeNotes,
   onShowHistory,
+  onRevealAlignment,
+  onResolveMadness,
 }: Props) {
   const { t } = useI18n()
 
@@ -60,12 +64,28 @@ export function StorytellerFabMenu({
       onSelect: onTakeNotes,
     },
     {
+      id: 'madness',
+      icon: 'drama',
+      label: 'Resolve Madness',
+      onSelect: onResolveMadness ?? (() => {}),
+    },
+    {
       id: 'history',
       icon: 'history',
       label: t.common.history,
       onSelect: onShowHistory,
     },
+    {
+      id: 'alignment',
+      icon: 'scale',
+      label: t.game.revealAlignment,
+      onSelect: onRevealAlignment,
+    },
   ]
+
+  const visibleActions = onResolveMadness
+    ? actions
+    : actions.filter((action) => action.id !== 'madness')
 
   return (
     <Popover.Root>
@@ -91,7 +111,7 @@ export function StorytellerFabMenu({
             {t.game.storytellerMenu}
           </div>
           <div className='space-y-1'>
-            {actions.map((action) => (
+            {visibleActions.map((action) => (
               <MenuAction key={action.id} action={action} />
             ))}
           </div>

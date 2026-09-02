@@ -6,7 +6,7 @@ import {
   getRoleTranslations,
   useI18n,
 } from '../../../../i18n'
-import { getCurrentRoleId } from '../../../../identity'
+import { getCurrentRoleId, getRoleTeamId } from '../../../../identity'
 import { getRole } from '../../../index'
 import { buildTransformationStateChanges } from '../../../../transformations'
 import { DefaultRoleReveal } from '../../../../../components/items/DefaultRoleReveal'
@@ -31,7 +31,7 @@ type Phase = 'select_target' | 'show_new_demon'
 
 const definition: RoleDefinition = {
   id: 'snake_charmer',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'fish',
   nightOrder: 19,
   chaos: 58,
@@ -48,7 +48,7 @@ const definition: RoleDefinition = {
     const target = state.players.find((candidate) => candidate.id === selectedTargetId)
     const targetRoleId = target ? getCurrentRoleId(target) : undefined
     const targetRole = targetRoleId ? getRole(targetRoleId) : undefined
-    const hitDemon = !malfunctioning && targetRole?.team === 'demon'
+    const hitDemon = !malfunctioning && getRoleTeamId(targetRole) === 'demon'
 
     const finalize = () => {
       if (!target) return

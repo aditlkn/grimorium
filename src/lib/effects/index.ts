@@ -29,6 +29,7 @@ import SweetheartPending from './definition/sweetheart-pending'
 import SagePending from './definition/sage-pending'
 import KlutzChoicePending from './definition/klutz-choice-pending'
 import MutantExecution from './definition/mutant-execution'
+import MadnessBreakPending from './definition/madness-break-pending'
 import BarberSwapPending from './definition/barber-swap-pending'
 import ArtistQuestion from './definition/artist-question'
 import SavantAdvice from './definition/savant-advice'
@@ -65,6 +66,7 @@ export const EFFECTS: Record<EffectId, EffectDefinition> = {
   sage_pending: SagePending,
   klutz_choice_pending: KlutzChoicePending,
   mutant_execution: MutantExecution,
+  madness_break_pending: MadnessBreakPending,
   barber_swap_pending: BarberSwapPending,
   artist_question: ArtistQuestion,
   savant_advice: SavantAdvice,

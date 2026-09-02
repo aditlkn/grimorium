@@ -7,7 +7,7 @@ import {
   generateId,
 } from '../types'
 import { getRole } from '../roles'
-import { getAlignmentForTeam } from '../identity'
+import { getAlignmentForRoleTeam } from '../identity'
 
 // ============================================================================
 // PLAYER FACTORY
@@ -21,7 +21,7 @@ export function makePlayer(
   playerCounter++
   const roleId = overrides.roleId ?? 'villager'
   const role = getRole(roleId)
-  const alignment: Alignment = getAlignmentForTeam(role?.team)
+  const alignment: Alignment = getAlignmentForRoleTeam(role?.roleTeam)
   return {
     id: overrides.id ?? `player_${playerCounter}`,
     name: overrides.name ?? `Player ${playerCounter}`,

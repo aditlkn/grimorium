@@ -16,7 +16,7 @@ import {
   StorytellerBooleanScreen,
 } from '../../../../../components/screens/SectsAndVioletsActionScreens'
 import { playersShareAlignment } from '../helpers'
-import { shouldForceFalseInfo } from '../../../runtime-helpers'
+import { getFalseInfoMode, shouldForceFalseInfo } from '../../../runtime-helpers'
 
 import en from './i18n/en'
 import es from './i18n/es'
@@ -36,7 +36,7 @@ function hasUsedSeamstress(game: Game, playerId: string): boolean {
 
 const definition: RoleDefinition = {
   id: 'seamstress',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'shirt',
   nightOrder: 31,
   chaos: 32,
@@ -47,6 +47,7 @@ const definition: RoleDefinition = {
   NightAction: ({ state, player, onComplete }) => {
     const { t, language } = useI18n()
     const roleT = getRoleTranslations('seamstress', language)
+    const falseInfoMode = getFalseInfoMode(state, player)
     const malfunctioning = shouldForceFalseInfo(state, player)
     const [phase, setPhase] = useState<'choose_players' | 'configure' | 'show_result'>(
       'choose_players',
@@ -61,6 +62,10 @@ const definition: RoleDefinition = {
 
     const playerNames = selectedIds.map(
       (id) => state.players.find((candidate) => candidate.id === id)?.name ?? t.ui.unknownPlayer,
+    )
+    const selectablePlayers = useMemo(
+      () => state.players.filter((candidate) => candidate.id !== player.id),
+      [player.id, state.players],
     )
 
     const finishWith = (resultValue: boolean) => {
@@ -97,6 +102,7 @@ const definition: RoleDefinition = {
           description={roleT.configureDescription.replace('{first}', playerNames[0] ?? '').replace('{second}', playerNames[1] ?? '')}
           trueLabel={roleT.sameLabel}
           falseLabel={roleT.differentLabel}
+          falseInfoMode={falseInfoMode}
           onBack={() => setPhase('choose_players')}
           onSelect={(value) => {
             setShownValue(value)
@@ -141,9 +147,10 @@ const definition: RoleDefinition = {
 
           <div className='flex-1 px-4 pb-4 max-w-lg mx-auto w-full overflow-y-auto'>
             <PlayerPickerList
-              players={state.players}
+              players={selectablePlayers}
               selected={selectedIds}
               onSelect={(playerId) => {
+                if (playerId === player.id) return
                 setSelectedIds((current) => {
                   if (current.includes(playerId)) {
                     return current.filter((id) => id !== playerId)

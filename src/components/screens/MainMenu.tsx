@@ -151,7 +151,9 @@ type Props = {
   onContinue: (gameId: string) => void
   onLoadGame: (gameId: string) => void
   onRolesLibrary: () => void
+  onScriptLibrary: () => void
   onHowToPlay: () => void
+  onEngineV2Lab?: () => void
 }
 
 type Phase = 'sealed' | 'breaking' | 'open'
@@ -178,7 +180,9 @@ export function MainMenu({
   onContinue,
   onLoadGame,
   onRolesLibrary,
+  onScriptLibrary,
   onHowToPlay,
+  onEngineV2Lab,
 }: Props) {
   const { language, t } = useI18n()
   const branchName = __APP_BRANCH__
@@ -503,6 +507,28 @@ export function MainMenu({
                 >
                   {t.mainMenu.rolesLibrary}
                 </button>
+
+                <span className='text-parchment-500/40'>·</span>
+
+                <button
+                  onClick={onScriptLibrary}
+                  className='text-sm text-parchment-400 hover:text-parchment-200 underline underline-offset-4 decoration-1 decoration-parchment-500/40 transition-colors tracking-wider'
+                >
+                  Script Library
+                </button>
+
+                {onEngineV2Lab && (
+                  <>
+                    <span className='text-parchment-500/40'>·</span>
+
+                    <button
+                      onClick={onEngineV2Lab}
+                      className='text-sm text-parchment-400 hover:text-parchment-200 underline underline-offset-4 decoration-1 decoration-parchment-500/40 transition-colors tracking-wider'
+                    >
+                      Engine V2 Lab
+                    </button>
+                  </>
+                )}
 
                 {games.length > 0 && (
                   <>

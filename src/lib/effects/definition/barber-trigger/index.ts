@@ -3,34 +3,58 @@ import {
   ExecuteIntent,
   IntentHandler,
   KillIntent,
+  NominateIntent,
 } from '../../../pipeline/types'
-import { hasEffect } from '../../../types'
+import { hasEffect, isAlive } from '../../../types'
+import { getCurrentRoleTeam } from '../../../identity'
 
 const triggerHandler: IntentHandler = {
-  intentType: ['kill', 'execute'],
+  intentType: ['kill', 'execute', 'nominate'],
   priority: 20,
-  appliesTo: (intent, effectPlayer) => {
+  appliesTo: (intent, effectPlayer, state) => {
     const targetId =
       intent.type === 'kill'
         ? (intent as KillIntent).targetId
-        : (intent as ExecuteIntent).playerId
+        : intent.type === 'execute'
+          ? (intent as ExecuteIntent).playerId
+          : (intent as NominateIntent).nominatorId
+
+    const hasAliveEvilDemon = state.players.some(
+      (player) => isAlive(player) && getCurrentRoleTeam(player) === 'demon',
+    )
+    const witchCursedNominationDeath =
+      intent.type === 'nominate' && hasEffect(effectPlayer, 'witch_curse')
 
     return (
       targetId === effectPlayer.id &&
-      !hasEffect(effectPlayer, 'barber_swap_pending')
+      (intent.type !== 'nominate' || witchCursedNominationDeath) &&
+      hasAliveEvilDemon &&
+      !state.players.some((player) => hasEffect(player, 'barber_swap_pending'))
     )
   },
-  handle: (_intent, effectPlayer) => ({
-    action: 'allow',
-    stateChanges: {
-      entries: [],
-      addEffects: {
-        [effectPlayer.id]: [
-          { type: 'barber_swap_pending', expiresAt: 'never' },
-        ],
+  handle: (_intent, effectPlayer, state) => {
+    const demon = state.players.find(
+      (player) => isAlive(player) && getCurrentRoleTeam(player) === 'demon',
+    )
+
+    if (!demon) return { action: 'allow' }
+
+    return {
+      action: 'allow',
+      stateChanges: {
+        entries: [],
+        addEffects: {
+          [demon.id]: [
+            {
+              type: 'barber_swap_pending',
+              expiresAt: 'never',
+              data: { barberId: effectPlayer.id },
+            },
+          ],
+        },
       },
-    },
-  }),
+    }
+  },
 }
 
 const definition: EffectDefinition = {

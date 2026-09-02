@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  getAlignmentForTeam,
+  getAlignmentForRoleTeam,
   getBaseAlignment,
   getBaseRoleId,
   getCurrentAlignment,
   getCurrentRoleId,
-  getCurrentTeam,
+  getCurrentRoleTeam,
   initializePlayerIdentity,
   isEvil,
   isGood,
@@ -38,7 +38,7 @@ describe('identity helpers', () => {
 
     expect(getCurrentRoleId(player)).toBe('washerwoman')
     expect(getBaseRoleId(player)).toBe('washerwoman')
-    expect(getCurrentTeam(player)).toBe('townsfolk')
+    expect(getCurrentRoleTeam(player)).toBe('townsfolk')
     expect(getCurrentAlignment(player)).toBe('good')
     expect(getBaseAlignment(player)).toBe('good')
     expect(isGood(player)).toBe(true)
@@ -46,10 +46,10 @@ describe('identity helpers', () => {
   })
 
   it('maps teams to alignments consistently', () => {
-    expect(getAlignmentForTeam('townsfolk')).toBe('good')
-    expect(getAlignmentForTeam('outsider')).toBe('good')
-    expect(getAlignmentForTeam('minion')).toBe('evil')
-    expect(getAlignmentForTeam('demon')).toBe('evil')
+    expect(getAlignmentForRoleTeam('townsfolk')).toBe('good')
+    expect(getAlignmentForRoleTeam('outsider')).toBe('good')
+    expect(getAlignmentForRoleTeam('minion')).toBe('evil')
+    expect(getAlignmentForRoleTeam('demon')).toBe('evil')
   })
 })
 

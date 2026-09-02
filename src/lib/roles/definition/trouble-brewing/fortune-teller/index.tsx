@@ -4,7 +4,6 @@ import {
   NightActionResult,
   SetupActionProps,
 } from '../../../types'
-import { getRole } from '../../../index'
 import { isAlive } from '../../../../types'
 import {
   useI18n,
@@ -38,6 +37,8 @@ import {
 } from '../../../../pipeline'
 import { isMalfunctioning } from '../../../../effects'
 import { Perception } from '../../../../pipeline/types'
+import { getFalseInfoMode, shouldForceFalseInfo } from '../../../runtime-helpers'
+import { getCurrentRoleTeam } from '../../../../identity'
 
 import en from './i18n/en'
 import es from './i18n/es'
@@ -73,8 +74,8 @@ function FortuneTellerSetupAction({
   // Get good players for Red Herring selection (exclude the Fortune Teller)
   const goodPlayers = state.players.filter((p) => {
     if (p.id === player.id) return false
-    const role = getRole(p.roleId)
-    return role?.team === 'townsfolk' || role?.team === 'outsider'
+    const roleTeam = getCurrentRoleTeam(p)
+    return roleTeam === 'townsfolk' || roleTeam === 'outsider'
   })
 
   const handleSelectRandom = () => {
@@ -183,7 +184,7 @@ function FortuneTellerSetupAction({
 
 const definition: RoleDefinition = {
   id: 'fortune_teller',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'eye',
   nightOrder: 15,
   chaos: 40,
@@ -220,6 +221,8 @@ const definition: RoleDefinition = {
 
     const roleT = getRoleTranslations('fortune_teller', language)
 
+    const falseInfoMode = getFalseInfoMode(state, player)
+    const falseInfo = shouldForceFalseInfo(state, player)
     const malfunctioning = isMalfunctioning(player)
 
     const [phase, setPhase] = useState<Phase>('step_list')
@@ -244,10 +247,10 @@ const definition: RoleDefinition = {
     )
     const ambiguousPlayers = useMemo(
       () =>
-        !malfunctioning && selectPlayersDone
-          ? getAmbiguousPlayers(selectedPlayerObjects, 'team')
+        !falseInfo && selectPlayersDone
+          ? getAmbiguousPlayers(selectedPlayerObjects, 'roleTeam')
           : [],
-      [selectedPlayerObjects, malfunctioning, selectPlayersDone],
+      [selectedPlayerObjects, falseInfo, selectPlayersDone],
     )
     const needsPerceptionConfig = ambiguousPlayers.length > 0
 
@@ -277,7 +280,7 @@ const definition: RoleDefinition = {
         })
       }
 
-      if (malfunctioning) {
+      if (falseInfo) {
         result.push({
           id: 'configure_malfunction',
           icon: 'flask',
@@ -296,7 +299,7 @@ const definition: RoleDefinition = {
       })
 
       return result
-    }, [selectPlayersDone, needsPerceptionConfig, perceptionConfigDone, malfunctioning, malfunctionConfigDone, t])
+    }, [selectPlayersDone, needsPerceptionConfig, perceptionConfigDone, falseInfo, malfunctionConfigDone, t])
 
     const handleSelectStep = (stepId: string) => {
       if (stepId === 'select_players') {
@@ -364,8 +367,8 @@ const definition: RoleDefinition = {
       // Check if either selected player registers as a Demon
       const registersDemon = (p: typeof player1) => {
         if (!p) return false
-        const perception = perceive(p, effectiveObserver, 'team', effectiveState)
-        return perception.team === 'demon'
+        const perception = perceive(p, effectiveObserver, 'roleTeam', effectiveState)
+        return perception.roleTeam === 'demon'
       }
 
       const calculatedSawDemon =
@@ -435,6 +438,7 @@ const definition: RoleDefinition = {
           roleIcon='eye'
           roleName={getRoleName('fortune_teller', language)}
           playerName={player.name}
+          falseInfoMode={falseInfoMode}
           trueLabel={roleT.yesOneIsDemon}
           falseLabel={roleT.noNeitherIsDemon}
           onComplete={handleMalfunctionComplete}
@@ -447,7 +451,7 @@ const definition: RoleDefinition = {
       return (
         <PerceptionConfigStep
           ambiguousPlayers={ambiguousPlayers}
-          context='team'
+          context='roleTeam'
           state={state}
           roleIcon='eye'
           roleName={getRoleName('fortune_teller', language)}
@@ -465,6 +469,7 @@ const definition: RoleDefinition = {
           roleName={getRoleName('fortune_teller', language)}
           audience='player_choice'
           playerName={getPlayerName(player.id)}
+          falseInfoMode={falseInfoMode}
           onShowToPlayer={handleSelectPlayersDone}
           showToPlayerDisabled={selectedPlayers.length !== 2}
           showToPlayerLabel={t.common.confirm}
@@ -499,8 +504,8 @@ const definition: RoleDefinition = {
     // Calculate result for display
     const registersDemon = (p: typeof player1) => {
       if (!p) return false
-      const perception = perceive(p, effectiveObserver, 'team', effectiveState)
-      return perception.team === 'demon'
+      const perception = perceive(p, effectiveObserver, 'roleTeam', effectiveState)
+      return perception.roleTeam === 'demon'
     }
 
     const displaySawDemon =

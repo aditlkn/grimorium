@@ -12,7 +12,7 @@ import {
   StorytellerBooleanScreen,
 } from '../../../../../components/screens/SectsAndVioletsActionScreens'
 import { didDemonVoteToday } from '../helpers'
-import { shouldForceFalseInfo } from '../../../runtime-helpers'
+import { getFalseInfoMode, shouldForceFalseInfo } from '../../../runtime-helpers'
 
 import en from './i18n/en'
 import es from './i18n/es'
@@ -22,7 +22,7 @@ registerRoleTranslations('flowergirl', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'flowergirl',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'flower',
   nightOrder: 42,
   chaos: 27,
@@ -35,6 +35,7 @@ const definition: RoleDefinition = {
     const { language } = useI18n()
     const roleT = getRoleTranslations('flowergirl', language)
     const actualValue = didDemonVoteToday(game)
+    const falseInfoMode = getFalseInfoMode(state, player)
     const malfunctioning = shouldForceFalseInfo(state, player)
     const [shownValue, setShownValue] = useState(actualValue)
     const [phase, setPhase] = useState<'configure' | 'show_result'>(
@@ -72,6 +73,7 @@ const definition: RoleDefinition = {
           description={roleT.configureDescription}
           trueLabel={roleT.yesLabel}
           falseLabel={roleT.noLabel}
+          falseInfoMode={falseInfoMode}
           onSelect={(value) => {
             setShownValue(value)
             setPhase('show_result')

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { PipelineInputProps } from '../../lib/pipeline/types'
 import { isAlive } from '../../lib/types'
-import { getCurrentTeam } from '../../lib/identity'
+import { getCurrentRoleTeam } from '../../lib/identity'
 import { useI18n, getRoleTranslations } from '../../lib/i18n'
 import { PlayerPickerList } from '../inputs'
 import { Button, Icon } from '../atoms'
@@ -20,7 +20,7 @@ export function StarpassSelectUI({ state, onComplete }: PipelineInputProps) {
     () =>
       state.players.filter((p) => {
         if (!isAlive(p)) return false
-        return getCurrentTeam(p) === 'minion'
+        return getCurrentRoleTeam(p) === 'minion'
       }),
     [state.players],
   )

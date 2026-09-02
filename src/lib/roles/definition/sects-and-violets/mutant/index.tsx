@@ -10,7 +10,7 @@ registerRoleTranslations('mutant', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'mutant',
-  team: 'outsider',
+  roleTeam: 'outsider',
   icon: 'zapOff',
   nightOrder: null,
   chaos: 68,

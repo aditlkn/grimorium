@@ -5,7 +5,11 @@ import {
   shouldShowMinionEvilTeamStep,
 } from '../../lib/evilInfo'
 import { GameState, PlayerState } from '../../lib/types'
-import { getCurrentRole, getCurrentTeam } from '../../lib/identity'
+import {
+  getCurrentRole,
+  getCurrentRoleTeam,
+  getRoleTeamId,
+} from '../../lib/identity'
 import { useI18n, getRoleName } from '../../lib/i18n'
 import { Icon } from '../atoms'
 
@@ -63,14 +67,16 @@ export function EvilTeamReveal({
       const role = getCurrentRole(p)
       if (!role) continue
 
-      if (role.team === 'minion' && viewerType === 'demon') {
+      const roleTeam = getRoleTeamId(role)
+
+      if (roleTeam === 'minion' && viewerType === 'demon') {
         members.push({
           player: p,
           showRole: false, // Never show minion roles
           teamLabel: t.teams.minion.name,
         })
       } else if (
-        role.team === 'minion' &&
+        roleTeam === 'minion' &&
         viewerType === 'minion' &&
         evilInfoPlan.minionsLearnOtherMinions
       ) {
@@ -80,7 +86,7 @@ export function EvilTeamReveal({
           teamLabel: t.teams.minion.name,
         })
       } else if (
-        role.team === 'demon' &&
+        roleTeam === 'demon' &&
         viewerType === 'minion' &&
         evilInfoPlan.minionsLearnDemon
       ) {
@@ -94,10 +100,10 @@ export function EvilTeamReveal({
 
     // Sort: demons first (when viewer is minion), then minions
     members.sort((a, b) => {
-      const aRole = getCurrentRole(a.player)
-      const bRole = getCurrentRole(b.player)
-      if (aRole?.team === 'demon' && bRole?.team !== 'demon') return -1
-      if (aRole?.team !== 'demon' && bRole?.team === 'demon') return 1
+      const aRoleTeam = getRoleTeamId(getCurrentRole(a.player))
+      const bRoleTeam = getRoleTeamId(getCurrentRole(b.player))
+      if (aRoleTeam === 'demon' && bRoleTeam !== 'demon') return -1
+      if (aRoleTeam !== 'demon' && bRoleTeam === 'demon') return 1
       return 0
     })
 
@@ -116,7 +122,7 @@ export function EvilTeamReveal({
     <div className='space-y-3'>
       {teamMembers.map((member) => {
         const role = getCurrentRole(member.player)
-        const isDemon = getCurrentTeam(member.player) === 'demon'
+        const isDemon = getCurrentRoleTeam(member.player) === 'demon'
 
         return (
           <div

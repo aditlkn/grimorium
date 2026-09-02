@@ -1,5 +1,5 @@
 import { RoleDefinition } from '../../../types'
-import { isAlive } from '../../../../types'
+import { hasEffect, isAlive } from '../../../../types'
 import {
   registerRoleTranslations,
   getRoleTranslations,
@@ -17,18 +17,35 @@ registerRoleTranslations('witch', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'witch',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'sparkles',
   nightOrder: 6,
   chaos: 56,
-  shouldWake: (game, player) =>
-    isAlive(player) || canActWhileDeadUnderVigormortis(game, player),
+  shouldWake: (game, player) => {
+    const state = game.history.at(-1)?.stateAfter
+    const aliveCount = state
+      ? state.players.filter((candidate) => isAlive(candidate)).length
+      : 0
+    if (aliveCount <= 3) return false
+    return isAlive(player) || canActWhileDeadUnderVigormortis(game, player)
+  },
 
   RoleReveal: DefaultRoleReveal,
 
   NightAction: ({ state, player, onComplete }) => {
     const { language } = useI18n()
     const roleT = getRoleTranslations('witch', language)
+    const selectablePlayers = state.players.filter((candidate) => candidate.id !== player.id)
+    const aliveIds = selectablePlayers
+      .filter((candidate) => !hasEffect(candidate, 'dead'))
+      .map((candidate) => candidate.id)
+    const deadIds = selectablePlayers
+      .filter((candidate) => hasEffect(candidate, 'dead'))
+      .map((candidate) => candidate.id)
+    const groups = [
+      { label: 'Alive', playerIds: aliveIds },
+      { label: 'Dead', playerIds: deadIds },
+    ].filter((group) => group.playerIds.length > 0)
 
     return (
       <StorytellerChoiceScreen
@@ -37,7 +54,8 @@ const definition: RoleDefinition = {
         title={roleT.chooseTargetTitle}
         description={roleT.chooseTargetDescription}
         confirmLabel={roleT.confirmChoiceLabel}
-        players={state.players.filter((candidate) => candidate.id !== player.id)}
+        players={selectablePlayers}
+        groups={groups}
         selectionCount={1}
         onConfirm={(ids) => {
           const targetId = ids[0]

@@ -3,7 +3,13 @@ import type { RoleDefinition } from './roles/types'
 import type { Alignment, PlayerState } from './types'
 import type { TeamId } from './teams'
 
-export function getAlignmentForTeam(teamId?: TeamId | null): Alignment {
+export function getRoleTeamId(
+  role?: Pick<RoleDefinition, 'roleTeam'> | null,
+): TeamId | undefined {
+  return role?.roleTeam
+}
+
+export function getAlignmentForRoleTeam(teamId?: TeamId | null): Alignment {
   return teamId === 'minion' || teamId === 'demon' ? 'evil' : 'good'
 }
 
@@ -25,16 +31,24 @@ export function getBaseRole(player: PlayerState): RoleDefinition | undefined {
 
 export function getCurrentAlignment(player: PlayerState): Alignment {
   return (
-    player.currentAlignment ?? getAlignmentForTeam(getCurrentRole(player)?.team)
+    player.currentAlignment ??
+    getAlignmentForRoleTeam(getRoleTeamId(getCurrentRole(player)))
   )
 }
 
 export function getBaseAlignment(player: PlayerState): Alignment {
-  return player.baseAlignment ?? getAlignmentForTeam(getBaseRole(player)?.team)
+  return (
+    player.baseAlignment ??
+    getAlignmentForRoleTeam(getRoleTeamId(getBaseRole(player)))
+  )
 }
 
-export function getCurrentTeam(player: PlayerState): TeamId | undefined {
-  return getCurrentRole(player)?.team
+export function getCurrentRoleTeam(player: PlayerState): TeamId | undefined {
+  return getRoleTeamId(getCurrentRole(player))
+}
+
+export function getBaseRoleTeam(player: PlayerState): TeamId | undefined {
+  return getRoleTeamId(getBaseRole(player))
 }
 
 export function isGood(player: PlayerState): boolean {
@@ -47,13 +61,14 @@ export function isEvil(player: PlayerState): boolean {
 
 export function initializePlayerIdentity(player: PlayerState): PlayerState {
   const currentRole = getRole(player.roleId)
+  const currentRoleTeam = getRoleTeamId(currentRole)
 
   return {
     ...player,
     baseRoleId: player.baseRoleId ?? player.roleId,
     baseAlignment:
-      player.baseAlignment ?? getAlignmentForTeam(currentRole?.team),
+      player.baseAlignment ?? getAlignmentForRoleTeam(currentRoleTeam),
     currentAlignment:
-      player.currentAlignment ?? getAlignmentForTeam(currentRole?.team),
+      player.currentAlignment ?? getAlignmentForRoleTeam(currentRoleTeam),
   }
 }

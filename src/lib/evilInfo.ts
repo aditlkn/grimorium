@@ -1,7 +1,7 @@
 import { getRoleEvilInfoModifier } from './roles/evilInfoMetadata'
 import { GameState } from './types'
 import type { EvilInfoModifier, RoleId } from './roles/types'
-import { getCurrentRoleId, getCurrentTeam } from './identity'
+import { getCurrentRoleId, getCurrentRoleTeam } from './identity'
 
 export type ResolvedEvilInfoPlan = {
   demonLearnsMinions: boolean
@@ -71,12 +71,12 @@ function countEvilTeams(state: Pick<GameState, 'players'>): {
   let demonCount = 0
 
   for (const player of state.players) {
-    const team = getCurrentTeam(player)
-    if (team === 'demon') {
+    const roleTeam = getCurrentRoleTeam(player)
+    if (roleTeam === 'demon') {
       demonCount += 1
       continue
     }
-    if (team === 'minion') {
+    if (roleTeam === 'minion') {
       minionCount += 1
     }
   }

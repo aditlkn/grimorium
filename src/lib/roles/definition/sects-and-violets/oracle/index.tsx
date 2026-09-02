@@ -12,7 +12,7 @@ import {
   StorytellerNumberScreen,
 } from '../../../../../components/screens/SectsAndVioletsActionScreens'
 import { countDeadEvilPlayers } from '../helpers'
-import { shouldForceFalseInfo } from '../../../runtime-helpers'
+import { getFalseInfoMode, shouldForceFalseInfo } from '../../../runtime-helpers'
 
 import en from './i18n/en'
 import es from './i18n/es'
@@ -22,7 +22,7 @@ registerRoleTranslations('oracle', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'oracle',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'bookMarked',
   nightOrder: 41,
   chaos: 30,
@@ -38,11 +38,14 @@ const definition: RoleDefinition = {
       () => countDeadEvilPlayers(state, player),
       [player, state],
     )
+    const falseInfoMode = getFalseInfoMode(state, player)
     const malfunctioning = shouldForceFalseInfo(state, player)
     const [shownCount, setShownCount] = useState(actualCount)
     const [phase, setPhase] = useState<'configure' | 'show_result'>(
       malfunctioning ? 'configure' : 'show_result',
     )
+
+    const revealCount = malfunctioning ? shownCount : actualCount
 
     const complete = () => {
       onComplete({
@@ -52,14 +55,14 @@ const definition: RoleDefinition = {
             message: [
               {
                 type: 'text',
-                content: `${player.name} learned that ${shownCount} dead players are evil.`,
+                content: `${player.name} learned that ${revealCount} dead players are evil.`,
               },
             ],
             data: {
               roleId: 'oracle',
               playerId: player.id,
               action: 'oracle_info',
-              deadEvilCount: shownCount,
+              deadEvilCount: revealCount,
               ...(malfunctioning ? { malfunctioned: true, actualCount } : {}),
             },
           },
@@ -77,6 +80,7 @@ const definition: RoleDefinition = {
           min={0}
           max={state.players.length}
           confirmLabel={roleT.configureConfirm}
+          falseInfoMode={falseInfoMode}
           onChange={setShownCount}
           onConfirm={() => setPhase('show_result')}
         />
@@ -87,10 +91,10 @@ const definition: RoleDefinition = {
       <PlayerNumberRevealScreen
         playerName={player.name}
         icon='bookMarked'
-        title={roleT.infoTitle}
-        subtitle={roleT.name}
-        label={roleT.countLabel}
-        value={shownCount}
+        title={roleT.countLabel}
+        subtitle={player.name}
+        label={roleT.infoTitle}
+        value={revealCount}
         onComplete={complete}
       />
     )

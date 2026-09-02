@@ -9,6 +9,7 @@ import {
   WinConditionCheck,
   PerceptionModifier,
 } from '../pipeline/types'
+import type { MadnessResolutionEntry } from '../madnessResolution'
 
 export type EffectPersistenceDecision = 'keep' | 'remove'
 
@@ -43,6 +44,7 @@ export type EffectId =
   | 'sage_pending'
   | 'klutz_choice_pending'
   | 'mutant_execution'
+  | 'madness_break_pending'
   | 'barber_swap_pending'
   | 'artist_question'
   | 'savant_advice'
@@ -137,6 +139,33 @@ export type EffectDefinition = {
   canRegisterAs?: {
     teams?: TeamId[]
     alignments?: ('good' | 'evil')[]
+  }
+
+  /**
+   * Optional shared madness metadata. Effects that represent an actively
+   * breakable madness condition can expose themselves here so the storyteller
+   * surface can discover them generically.
+   */
+  madnessResolution?: {
+    buildActiveEntry?: (
+      player: PlayerState,
+      instance: EffectInstance,
+      language: string,
+    ) => Omit<
+      MadnessResolutionEntry,
+      'id' | 'playerId' | 'effectType' | 'status'
+    > | null
+    buildPendingEntry?: (
+      player: PlayerState,
+      input: {
+        sourceRoleId?: string
+        claimRoleId?: string
+      },
+      language: string,
+    ) => Omit<
+      MadnessResolutionEntry,
+      'id' | 'playerId' | 'effectType' | 'status'
+    > | null
   }
 
   /**

@@ -77,6 +77,7 @@ export type Translations = {
 
     step3Title: string
     step3Subtitle: string
+    step3GrimoireSubtitle: string
     assignmentInfo: string
     resetToRandom: string
     playerAssignments: string
@@ -87,6 +88,13 @@ export type Translations = {
     rolesRandomlyAssigned: string
     customizeAssignments: string
     tapToAssign: string
+    assignInGrimoire: string
+    grimoireAssignmentHelp: string
+    selectSeatToEdit: string
+    chooseRoleForSeat: string
+    allSeatsNeedNames: string
+    allSeatsNeedRoles: string
+    allRolesPlaced: string
   }
 
   // Game Phases
@@ -97,6 +105,8 @@ export type Translations = {
     narratorRoleChanged: string
     readyShowToPlayer: string
     yourRoleHasChanged: string
+    yourGoodTwinIs: string
+    yourEvilTwinIs: string
 
     // Night
     nightComplete: string
@@ -163,6 +173,17 @@ export type Translations = {
     evilWins: string
     townVanquishedDemon: string
     demonConqueredTown: string
+    winTriggeredBy: string
+    winReasonAllDemonsDead: string
+    winReasonFinalTwoAlive: string
+    winReasonVortoxNoExecution: string
+    winReasonMartyrdomExecution: string
+    winReasonEvilTwinGoodExecuted: string
+    winReasonEvilTwinEvilExecuted: string
+    winReasonMayorPeacefulVictory: string
+    winReasonSpecialAbility: string
+    winReasonSourceRole: string
+    winReasonSourceEffect: string
     finalRoles: string
     backToMainMenu: string
 
@@ -176,6 +197,12 @@ export type Translations = {
     storytellerNotesDescription: string
     storytellerNotesPlaceholder: string
     viewHistory: string
+    revealAlignment: string
+    selectPlayerForAlignmentReveal: string
+    chooseAlignmentToShow: string
+    yourAlignmentIs: string
+    youAreGood: string
+    youAreEvil: string
 
     // Shared narrator keys
     narratorSetup: string
@@ -217,8 +244,13 @@ export type Translations = {
     demonInfoDescription: string
     demonInfoSkippedUnderSeven: string
     demonBluffsDescription: string
+    demonCreationDeaths: string
+    demonCreationDeathsDescription: string
+    demonCreationDeathsConfirm: string
     allActionsComplete: string
     proceedToDay: string
+    goodTwinLabel: string
+    evilTwinLabel: string
 
     // Night Steps
     nightSteps: string
@@ -251,6 +283,9 @@ export type Translations = {
     chooseFalseRole: string
     keepOriginalRole: string
     malfunctionWarning: string
+    falseInfoRequired: string
+    arbitraryInfoReminder: string
+    falseInfoReminder: string
 
     // Setup Actions
     setupActions: string

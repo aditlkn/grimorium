@@ -1,5 +1,5 @@
 import { PlayerState, EffectInstance, hasEffect } from '../../lib/types'
-import { getCurrentRole } from '../../lib/identity'
+import { getCurrentRole, getRoleTeamId } from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import { Icon } from '../atoms'
 import { IconName } from '../atoms/icon'
@@ -97,7 +97,8 @@ export function PlayerRoleIcon({
   iconClassName,
 }: PlayerRoleIconProps) {
   const role = getCurrentRole(player)
-  const team = role ? getTeam(role.team) : null
+  const roleTeamId = getRoleTeamId(role)
+  const team = roleTeamId ? getTeam(roleTeamId) : null
   const isDead = hasEffect(player, 'dead')
   const isDrunk = hasEffect(player, 'drunk')
 

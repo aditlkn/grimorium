@@ -41,7 +41,7 @@ type Phase = 'step_list' | 'show_evil_team'
  */
 const definition: RoleDefinition = {
   id: 'baron',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'hatTop',
   nightOrder: 4, // Very early — just show info, before action roles
   chaos: 40,

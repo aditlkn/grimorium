@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Game, getCurrentState, getPlayer, PlayerState } from '../../lib/types'
+import { getCurrentAlignment, getRoleTeamId } from '../../lib/identity'
 import { getRole } from '../../lib/roles'
-import { getTeam } from '../../lib/teams'
 import { RoleCard } from '../items/RoleCard'
 import { TeamBackground, CardLink } from '../items/TeamBackground'
 import {
@@ -45,6 +45,7 @@ import {
   AvailableNightFollowUp,
   NightFollowUpResult,
   DayActionResult,
+  Intent,
 } from '../../lib/pipeline/types'
 import { saveGame } from '../../lib/storage'
 import { getRoleName, interpolate, useI18n } from '../../lib/i18n'
@@ -68,6 +69,9 @@ import { DawnScreen } from './DawnScreen'
 import { DeathRevealScreen, DeathRevealEntry } from './DeathRevealScreen'
 import { NightActionReplayScreen } from './NightActionReplayScreen'
 import { NightSystemActionScreen } from './NightSystemActionScreen'
+import { StorytellerAlignmentRevealFlow } from './StorytellerAlignmentRevealFlow'
+import { MadnessResolutionListScreen } from './MadnessResolutionListScreen'
+import { MadnessResolutionScreen } from './MadnessResolutionScreen'
 import { PlayerFacingContext } from '../context/PlayerFacingContext'
 import { PlayerFacingScreen } from '../layouts/PlayerFacingScreen'
 import type { Language, Translations } from '../../lib/i18n/types'
@@ -76,6 +80,11 @@ import { isMalfunctioning } from '../../lib/effects'
 import type { NightSystemStepId } from '../../lib/game'
 import type { RoleId } from '../../lib/roles/types'
 import { getScriptForGame } from '../../lib/scripts'
+import {
+  findMadnessResolutionEntry,
+  getMadnessResolutionEntries,
+  type MadnessResolutionEntry,
+} from '../../lib/madnessResolution'
 
 type Props = {
   initialGame: Game
@@ -105,6 +114,13 @@ type Screen =
   | { type: 'night_follow_up'; followUp: AvailableNightFollowUp }
   | { type: 'dawn'; deaths: string[]; round: number }
   | { type: 'day' }
+  | { type: 'madness_resolution_list'; returnTo: Screen }
+  | {
+      type: 'madness_resolution'
+      playerId: string
+      effectType?: string
+      returnTo: Screen
+    }
   | { type: 'nomination' }
   | { type: 'day_action'; action: AvailableDayAction; mode?: 'day' | 'end_day' }
   | { type: 'voting'; nomineeId: string; nominatorId: string }
@@ -136,6 +152,7 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
     useState<RoleId | null>(null)
   const [showNotes, setShowNotes] = useState(false)
   const [showGrimoire, setShowGrimoire] = useState(false)
+  const [showAlignmentReveal, setShowAlignmentReveal] = useState(false)
   const [grimoireIntent, setGrimoireIntent] = useState<GrimoireIntent>({
     view: 'list',
   })
@@ -168,6 +185,10 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
   const completedNightPrepItems = useMemo(
     () => getCompletedNightPrepItems(game, language, t),
     [game, language, t],
+  )
+  const madnessResolutionEntries = useMemo(
+    () => getMadnessResolutionEntries(state, language),
+    [language, state],
   )
 
   const updateGame = useCallback((newGame: Game) => {
@@ -289,6 +310,34 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
       }
     },
     [updateGame],
+  )
+
+  const resolveIntentsSequentially = useCallback(
+    (
+      intents: Intent[],
+      currentGame: Game,
+      onComplete: (updatedGame: Game) => void,
+    ) => {
+      const resolveAtIndex = (index: number, workingGame: Game) => {
+        if (index >= intents.length) {
+          onComplete(workingGame)
+          return
+        }
+
+        const pipelineResult = resolveIntent(
+          intents[index],
+          getCurrentState(workingGame),
+          workingGame,
+        )
+
+        processPipelineResult(pipelineResult, workingGame, (updatedGame) => {
+          resolveAtIndex(index + 1, updatedGame)
+        })
+      }
+
+      resolveAtIndex(0, currentGame)
+    },
+    [processPipelineResult],
   )
 
   // ========================================================================
@@ -419,14 +468,13 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
     const newGame = applyNightAction(game, result)
     updateGame(newGame)
 
-    if (result.intent) {
-      // Resolve the intent through the pipeline
-      const pipelineResult = resolveIntent(
-        result.intent,
-        getCurrentState(newGame),
-        newGame,
-      )
-      processPipelineResult(pipelineResult, newGame, (updatedGame) => {
+    const intents: Intent[] = [
+      ...(result.intent ? [result.intent] : []),
+      ...(result.intents ?? []),
+    ]
+
+    if (intents.length > 0) {
+      resolveIntentsSequentially(intents, newGame, (updatedGame) => {
         // After pipeline resolution, check win conditions and return to dashboard
         const winner = checkWinCondition(
           getCurrentState(updatedGame),
@@ -689,6 +737,79 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
       return
     }
     setScreen({ type: 'day' })
+  }
+
+  const handleOpenMadnessList = () => {
+    setScreen({ type: 'madness_resolution_list', returnTo: screen })
+  }
+
+  const handleOpenMadnessResolution = (
+    entry: MadnessResolutionEntry,
+    returnTo: Screen,
+  ) => {
+    setScreen({
+      type: 'madness_resolution',
+      playerId: entry.playerId,
+      effectType: entry.effectType,
+      returnTo,
+    })
+  }
+
+  const handleMadnessResolutionComplete = (result: DayActionResult) => {
+    const previousPlayers = state.players
+    const returnTo =
+      screen.type === 'madness_resolution' ? screen.returnTo : { type: 'day' as const }
+
+    const changes = {
+      entries: result.entries,
+      stateUpdates: result.stateUpdates,
+      addEffects: result.addEffects,
+      removeEffects: result.removeEffects,
+      changeAlignments: result.changeAlignments,
+      changeRoles: result.changeRoles,
+    }
+
+    const finishAction = (updatedGame: Game) => {
+      const updatedState = getCurrentState(updatedGame)
+      const deaths = getDeathsBetweenStates(previousPlayers, updatedState.players)
+
+      if (result.winner) {
+        const finalGame = endGame(updatedGame, result.winner)
+        updateGame(finalGame)
+        setScreen({ type: 'game_over' })
+        return
+      }
+
+      const winner = checkWinCondition(updatedState, updatedGame)
+      if (winner) {
+        const finalGame = endGame(updatedGame, winner)
+        updateGame(finalGame)
+        setScreen({ type: 'game_over' })
+        return
+      }
+
+      if (updatedState.phase === 'day' && deaths.length > 0) {
+        setScreen({ type: 'death_reveal', deaths, next: { type: 'day' } })
+        return
+      }
+
+      setScreen(returnTo)
+    }
+
+    const newGame = applyPipelineChanges(game, changes)
+    updateGame(newGame)
+
+    if (result.intent) {
+      const pipelineResult = resolveIntent(
+        result.intent,
+        getCurrentState(newGame),
+        newGame,
+      )
+      processPipelineResult(pipelineResult, newGame, finishAction)
+      return
+    }
+
+    finishAction(newGame)
   }
 
   // ========================================================================
@@ -1114,6 +1235,39 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
         )
       }
 
+      case 'madness_resolution_list':
+        return (
+          <MadnessResolutionListScreen
+            entries={madnessResolutionEntries}
+            onOpen={(entry) =>
+              handleOpenMadnessResolution(entry, screen.returnTo)
+            }
+            onBack={() => setScreen(screen.returnTo)}
+          />
+        )
+
+      case 'madness_resolution': {
+        const entry = findMadnessResolutionEntry(
+          state,
+          language,
+          screen.playerId,
+          screen.effectType,
+        )
+        if (!entry) {
+          setScreen(screen.returnTo)
+          return null
+        }
+
+        return (
+          <MadnessResolutionScreen
+            state={state}
+            entry={entry}
+            onComplete={handleMadnessResolutionComplete}
+            onBack={() => setScreen(screen.returnTo)}
+          />
+        )
+      }
+
       case 'day_action': {
         const ActionComponent = screen.action.ActionComponent
         return (
@@ -1142,12 +1296,12 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
         const player = getPlayer(state, screen.playerId)
         if (!player) return null
         const cardRole = getRole(player.roleId)
-        const cardTeamId = cardRole?.team ?? 'townsfolk'
-        const cardTeam = getTeam(cardTeamId)
+        const cardTeamId = getRoleTeamId(cardRole) ?? 'townsfolk'
+        const isEvil = getCurrentAlignment(player) === 'evil'
         return (
           <TeamBackground teamId={cardTeamId}>
             <RoleCard roleId={player.roleId} />
-            <CardLink onClick={handleRoleCardClose} isEvil={cardTeam.isEvil}>
+            <CardLink onClick={handleRoleCardClose} isEvil={isEvil}>
               {t.common.back}
             </CardLink>
           </TeamBackground>
@@ -1179,6 +1333,7 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
       case 'game_over':
         return (
           <GameOver
+            game={game}
             state={state}
             onMainMenu={onMainMenu}
             onShowHistory={() => setShowHistory(true)}
@@ -1197,7 +1352,8 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
   const showFloatingButtons =
     screen.type !== 'game_over' &&
     screen.type !== 'grimoire_role_card' &&
-    !isPlayerFacing
+    !isPlayerFacing &&
+    !showAlignmentReveal
 
   return (
     <div className='relative'>
@@ -1234,6 +1390,21 @@ export function GameScreen({ initialGame, onMainMenu }: Props) {
             }}
             onTakeNotes={() => setShowNotes(true)}
             onShowHistory={() => setShowHistory(true)}
+            onRevealAlignment={() => setShowAlignmentReveal(true)}
+            onResolveMadness={
+              madnessResolutionEntries.length > 0
+                ? () => handleOpenMadnessList()
+                : undefined
+            }
+          />
+        </div>
+      )}
+
+      {showAlignmentReveal && (
+        <div className='fixed inset-0 z-[75]'>
+          <StorytellerAlignmentRevealFlow
+            state={state}
+            onClose={() => setShowAlignmentReveal(false)}
           />
         </div>
       )}

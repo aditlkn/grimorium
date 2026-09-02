@@ -14,7 +14,11 @@ import {
   HistoryEntry,
   generateId,
 } from '../types'
-import { getAlignmentForTeam, getCurrentRole } from '../identity'
+import {
+  getAlignmentForRoleTeam,
+  getCurrentRole,
+  getRoleTeamId,
+} from '../identity'
 import { getEffect, isMalfunctioning } from '../effects'
 import { getDefaultResolver } from './resolvers'
 import { EffectToAdd } from '../roles/types'
@@ -422,7 +426,9 @@ function applyPlayerChanges(
       }
 
       if (hasRoleChange && !hasAlignmentChange) {
-        currentAlignment = getAlignmentForTeam(getRole(roleId)?.team)
+        currentAlignment = getAlignmentForRoleTeam(
+          getRoleTeamId(getRole(roleId)),
+        )
       }
 
       if (changeAlignments?.[player.id]) {

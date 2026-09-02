@@ -1,7 +1,7 @@
 import { EffectDefinition } from '../../types'
 import { IntentHandler, KillIntent } from '../../../pipeline/types'
 import { hasEffect } from '../../../types'
-import { getCurrentTeam } from '../../../identity'
+import { getCurrentRoleTeam } from '../../../identity'
 
 const triggerHandler: IntentHandler = {
   intentType: 'kill',
@@ -12,7 +12,7 @@ const triggerHandler: IntentHandler = {
     if (hasEffect(effectPlayer, 'sage_pending')) return false
 
     const source = state.players.find((player) => player.id === intent.sourceId)
-    return source ? getCurrentTeam(source) === 'demon' : false
+    return source ? getCurrentRoleTeam(source) === 'demon' : false
   },
   handle: (intent, effectPlayer) => ({
     action: 'allow',

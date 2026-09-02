@@ -10,6 +10,7 @@ import {
   getRoleTranslations,
 } from '../../../i18n'
 import { getRole, getRolesForGame } from '../../index'
+import { getRoleTeamId } from '../../../identity'
 import { isGoodTeam } from '../../../teams'
 import { DefaultRoleReveal } from '../../../../components/items/DefaultRoleReveal'
 import {
@@ -32,7 +33,7 @@ type Phase = 'step_list' | 'select_bluffs' | 'choose_victim'
 
 const definition: RoleDefinition = {
   id: 'imp',
-  team: 'demon',
+  roleTeam: 'demon',
   icon: 'flameKindling',
   nightOrder: 30,
   chaos: 30,
@@ -75,7 +76,7 @@ const definition: RoleDefinition = {
       const rolesInPlay = new Set(state.players.map((candidate) => candidate.roleId))
       return getRolesForGame(game).filter(
         (candidate) =>
-          isGoodTeam(candidate.team) &&
+          isGoodTeam(getRoleTeamId(candidate) ?? 'townsfolk') &&
           !rolesInPlay.has(candidate.id),
       )
     }, [game, state.players])
@@ -84,7 +85,7 @@ const definition: RoleDefinition = {
       () =>
         state.players.some((candidate) => {
           if (!isAlive(candidate)) return false
-          return getRole(candidate.roleId)?.team === 'minion'
+          return getRoleTeamId(getRole(candidate.roleId)) === 'minion'
         }),
       [state.players],
     )

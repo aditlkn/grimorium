@@ -1,6 +1,6 @@
 import { EffectDefinition } from '../../types'
 import { IntentHandler, KillIntent, PipelineInputProps } from '../../../pipeline/types'
-import { getCurrentTeam } from '../../../identity'
+import { getCurrentRoleTeam } from '../../../identity'
 import { GameState, PlayerState, isAlive } from '../../../types'
 import { StorytellerChoiceScreen } from '../../../../components/screens/SectsAndVioletsActionScreens'
 
@@ -12,7 +12,7 @@ function getClosestAliveTownsfolkChoices(
   if (sourceIndex === -1) return []
 
   const isAliveTownsfolk = (player: PlayerState) =>
-    isAlive(player) && getCurrentTeam(player) === 'townsfolk'
+    isAlive(player) && getCurrentRoleTeam(player) === 'townsfolk'
 
   let leftDistance: number | null = null
   let rightDistance: number | null = null
@@ -73,7 +73,7 @@ const handler: IntentHandler = {
     const target = state.players.find((player) => player.id === killIntent.targetId)
     if (!target) return false
 
-    return getCurrentTeam(target) === 'minion'
+    return getCurrentRoleTeam(target) === 'minion'
   },
   handle: (intent, _effectPlayer, state) => {
     const killIntent = intent as KillIntent

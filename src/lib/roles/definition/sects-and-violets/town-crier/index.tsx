@@ -12,7 +12,7 @@ import {
   StorytellerBooleanScreen,
 } from '../../../../../components/screens/SectsAndVioletsActionScreens'
 import { didMinionNominateToday } from '../helpers'
-import { shouldForceFalseInfo } from '../../../runtime-helpers'
+import { getFalseInfoMode, shouldForceFalseInfo } from '../../../runtime-helpers'
 
 import en from './i18n/en'
 import es from './i18n/es'
@@ -22,7 +22,7 @@ registerRoleTranslations('town_crier', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'town_crier',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'conciergeBell',
   nightOrder: 43,
   chaos: 28,
@@ -35,6 +35,7 @@ const definition: RoleDefinition = {
     const { language } = useI18n()
     const roleT = getRoleTranslations('town_crier', language)
     const actualValue = didMinionNominateToday(game)
+    const falseInfoMode = getFalseInfoMode(state, player)
     const malfunctioning = shouldForceFalseInfo(state, player)
     const [shownValue, setShownValue] = useState(actualValue)
     const [phase, setPhase] = useState<'configure' | 'show_result'>(
@@ -72,6 +73,7 @@ const definition: RoleDefinition = {
           description={roleT.configureDescription}
           trueLabel={roleT.yesLabel}
           falseLabel={roleT.noLabel}
+          falseInfoMode={falseInfoMode}
           onSelect={(value) => {
             setShownValue(value)
             setPhase('show_result')

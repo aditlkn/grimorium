@@ -223,19 +223,19 @@ export type WinConditionCheck = {
  * What aspect of a player is being queried by an information role.
  *
  * - "alignment": Is this player good or evil? (Chef, Empath)
- * - "team":      What team does this player belong to? (Washerwoman, Librarian, Investigator)
+ * - "roleTeam":  What character category does this player belong to? (Washerwoman, Librarian, Investigator)
  * - "role":      What specific role is this player? (Undertaker, Fortune Teller)
  */
-export type PerceptionContext = 'alignment' | 'team' | 'role'
+export type PerceptionContext = 'alignment' | 'roleTeam' | 'role'
 
 /**
  * The result of perceiving a player — what an information role "sees".
- * This may differ from the player's actual role/team/alignment due to
+ * This may differ from the player's actual role/roleTeam/alignment due to
  * perception modifiers (e.g., Recluse registering as evil, Spy registering as good).
  */
 export type Perception = {
   roleId: string
-  team: TeamId
+  roleTeam: TeamId
   alignment: 'good' | 'evil'
 }
 

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Game, GameState, PlayerState } from '../../lib/types'
+import { getRoleTeamId } from '../../lib/identity'
 import { RoleDefinition, NightActionResult } from '../../lib/roles/types'
 import { getRole, getRolesForGame } from '../../lib/roles/index'
 import { getTeam, TeamId } from '../../lib/teams'
@@ -37,8 +38,11 @@ import {
   perceive,
   canRegisterAsTeam,
 } from '../../lib/pipeline'
-import { isMalfunctioning } from '../../lib/effects'
 import { getPreparedNightActionData } from '../../lib/game'
+import {
+  getFalseInfoMode,
+  shouldForceFalseInfo,
+} from '../../lib/roles/runtime-helpers'
 
 // ============================================================================
 // CONFIG TYPE
@@ -121,8 +125,9 @@ export function InfoRoleNightAction({
   const [selectPlayersDone, setSelectPlayersDone] = useState(false)
   const [malfunctionConfigDone, setMalfunctionConfigDone] = useState(false)
 
-  const malfunctioning = isMalfunctioning(player)
-  const shouldUsePreparedData = Boolean(preparedData && !malfunctioning)
+  const falseInfoMode = getFalseInfoMode(state, player)
+  const falseInfo = shouldForceFalseInfo(state, player)
+  const shouldUsePreparedData = Boolean(preparedData && !falseInfo)
   const allPlayers = state.players
 
   // Annotation to highlight the current player in the picker
@@ -132,7 +137,9 @@ export function InfoRoleNightAction({
   // All defined roles of target team (for malfunction role picker)
   const targetTeamAllRoles = useMemo(
     () =>
-      getRolesForGame(game).filter((r) => r.team === config.targetTeam),
+      getRolesForGame(game).filter(
+        (role) => getRoleTeamId(role) === config.targetTeam,
+      ),
     [game, config.targetTeam],
   )
 
@@ -142,8 +149,11 @@ export function InfoRoleNightAction({
 
   /** Players whose actual team or canRegisterAs includes the target team */
   const isTargetTeamPlayer = (p: PlayerState): boolean => {
-    const perception = perceive(p, player, 'team', state)
-    return perception.team === config.targetTeam || canRegisterAsTeam(p, config.targetTeam)
+    const perception = perceive(p, player, 'roleTeam', state)
+    return (
+      perception.roleTeam === config.targetTeam ||
+      canRegisterAsTeam(p, config.targetTeam)
+    )
   }
 
   const targetGroupPlayers = useMemo(
@@ -188,8 +198,11 @@ export function InfoRoleNightAction({
   const targetsInSelection = selectedPlayers.filter((playerId) => {
     const p = state.players.find((pl) => pl.id === playerId)
     if (!p) return false
-    const perception = perceive(p, player, 'team', state)
-    return perception.team === config.targetTeam || canRegisterAsTeam(p, config.targetTeam)
+    const perception = perceive(p, player, 'roleTeam', state)
+    return (
+      perception.roleTeam === config.targetTeam ||
+      canRegisterAsTeam(p, config.targetTeam)
+    )
   })
 
   // ================================================================
@@ -204,12 +217,12 @@ export function InfoRoleNightAction({
     for (const pid of targetsInSelection) {
       const p = state.players.find((pl) => pl.id === pid)
       if (!p) continue
-      const pTeam = perceive(p, player, 'team', state)
+      const pTeam = perceive(p, player, 'roleTeam', state)
 
       // If the player's actual team matches, show their perceived role
       // If the player can only register as target team (via misregistration), show ALL target team roles
       const pRoles =
-        pTeam.team === config.targetTeam
+        pTeam.roleTeam === config.targetTeam
           ? (() => {
             const rp = perceive(p, player, 'role', state)
             const r = getRole(rp.roleId)
@@ -281,7 +294,7 @@ export function InfoRoleNightAction({
   }
 
   const handleCompleteSelectPlayers = () => {
-    if (malfunctioning) {
+    if (falseInfo) {
       if (!canCompleteMalfunctionSelect) return
       if (mode === 'prepare') {
         setPhase('configure_malfunction')
@@ -354,7 +367,7 @@ export function InfoRoleNightAction({
             roleId: config.roleId,
             playerId: player.id,
             action: 'no_target',
-            ...(malfunctioning ? { malfunctioned: true } : {}),
+            ...(falseInfo ? { malfunctioned: true } : {}),
           },
         },
       ],
@@ -391,7 +404,7 @@ export function InfoRoleNightAction({
             shownPlayers: selectedPlayers,
             targetId: selectedTargetPlayer,
             shownRoleId: selectedRoleId,
-            ...(malfunctioning ? { malfunctioned: true } : {}),
+            ...(falseInfo ? { malfunctioned: true } : {}),
           },
         },
       ],
@@ -435,7 +448,7 @@ export function InfoRoleNightAction({
     const preparedRoleId = preparedData.shownRoleId
     if (!preparedRoleId) return null
     const preparedRole = getRole(preparedRoleId)
-    const preparedTeamId = preparedRole?.team ?? 'townsfolk'
+    const preparedTeamId = getRoleTeamId(preparedRole) ?? 'townsfolk'
     const preparedTeam = getTeam(preparedTeamId)
 
     return (
@@ -538,7 +551,7 @@ export function InfoRoleNightAction({
       audience: 'narrator' as const,
     })
 
-    if (malfunctioning) {
+    if (falseInfo) {
       result.push({
         id: 'configure_malfunction',
         icon: 'flask',
@@ -557,7 +570,7 @@ export function InfoRoleNightAction({
     })
 
     return result
-  }, [selectPlayersDone, malfunctioning, malfunctionConfigDone, t, config.icon])
+  }, [selectPlayersDone, falseInfo, malfunctionConfigDone, t, config.icon])
 
   const handleSelectStep = (stepId: string) => {
     if (stepId === 'select_players') setPhase('select_players')
@@ -584,7 +597,7 @@ export function InfoRoleNightAction({
   // ================================================================
   // Phase: Select Players (healthy, no target team among other players)
   // ================================================================
-  if (phase === 'select_players' && !malfunctioning && !hasTargetTeam) {
+  if (phase === 'select_players' && !falseInfo && !hasTargetTeam) {
     return (
       <NarratorSetupLayout
         audience='narrator'
@@ -610,13 +623,14 @@ export function InfoRoleNightAction({
   // ================================================================
   // Phase: Select Players (healthy — with constraints + role picking)
   // ================================================================
-  if (phase === 'select_players' && !malfunctioning) {
+  if (phase === 'select_players' && !falseInfo) {
     return (
       <NarratorSetupLayout
         audience='narrator'
         icon={config.icon}
         roleName={getLocalRoleName(config.roleId)}
         playerName={getPlayerName(player.id)}
+        falseInfoMode={falseInfoMode}
         onShowToPlayer={handleCompleteSelectPlayers}
         showToPlayerDisabled={!canCompleteHealthySetup}
         showToPlayerLabel={t.common.confirm}
@@ -668,7 +682,7 @@ export function InfoRoleNightAction({
   // ================================================================
   // Phase: Select Players (malfunctioning — free selection)
   // ================================================================
-  if (phase === 'select_players' && malfunctioning) {
+  if (phase === 'select_players' && falseInfo) {
     return (
       <NarratorSetupLayout
         audience='narrator'
@@ -688,11 +702,15 @@ export function InfoRoleNightAction({
               className='text-amber-400 flex-shrink-0'
             />
             <p className='text-sm text-amber-300 font-medium'>
-              {t.game.malfunctionWarning}
+              {falseInfoMode === 'vortox'
+                ? t.game.falseInfoRequired
+                : t.game.malfunctionWarning}
             </p>
           </div>
           <p className='text-xs text-amber-400/70 mt-1 ml-7'>
-            {t.game.playerIsMalfunctioning}
+            {falseInfoMode === 'vortox'
+              ? t.game.falseInfoReminder
+              : t.game.arbitraryInfoReminder}
           </p>
         </div>
 
@@ -745,11 +763,15 @@ export function InfoRoleNightAction({
               className='text-amber-400 flex-shrink-0'
             />
             <p className='text-sm text-amber-300 font-medium'>
-              {t.game.malfunctionWarning}
+              {falseInfoMode === 'vortox'
+                ? t.game.falseInfoRequired
+                : t.game.malfunctionWarning}
             </p>
           </div>
           <p className='text-xs text-amber-400/70 mt-1 ml-7'>
-            {t.game.playerIsMalfunctioning}
+            {falseInfoMode === 'vortox'
+              ? t.game.falseInfoReminder
+              : t.game.arbitraryInfoReminder}
           </p>
         </div>
 
@@ -777,6 +799,7 @@ export function InfoRoleNightAction({
           player={player}
           title={labels.infoTitle}
           description={labels.noTargetMessage}
+          falseInfoMode={falseInfoMode}
         >
           <RoleRevealBadge
             icon='sparkles'
@@ -806,7 +829,7 @@ export function InfoRoleNightAction({
   if (!selectedRoleId) return null
 
   const shownRole = getRole(selectedRoleId)
-  const shownTeamId = shownRole?.team ?? 'townsfolk'
+  const shownTeamId = getRoleTeamId(shownRole) ?? 'townsfolk'
   const shownTeam = getTeam(shownTeamId)
 
   return (

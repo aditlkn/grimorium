@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getAllRoles, getRole } from '../../lib/roles'
 import { RoleId } from '../../lib/roles/types'
 import { ScriptId, getRoleIdsForScript } from '../../lib/scripts'
+import { getRoleTeamId } from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import { useI18n } from '../../lib/i18n'
 import { createInitialState } from '../../lib/types'
@@ -97,7 +98,7 @@ export function RoleDeal({
   const [nameDraft, setNameDraft] = useState('')
   const scriptRoleIds = getRoleIdsForScript(scriptId)
   const townsfolkRoles = getAllRoles().filter(
-    (role) => role.team === 'townsfolk' && scriptRoleIds.includes(role.id),
+    (role) => getRoleTeamId(role) === 'townsfolk' && scriptRoleIds.includes(role.id),
   )
 
   const lockedCount = assignments.filter((assignment) => assignment.locked).length
@@ -119,7 +120,8 @@ export function RoleDeal({
   const activeRole = activeAssignment
     ? getRole(activeAssignment.displayRoleId)
     : null
-  const activeTeam = activeRole ? getTeam(activeRole.team) : null
+  const activeRoleTeamId = getRoleTeamId(activeRole)
+  const activeTeam = activeRoleTeamId ? getTeam(activeRoleTeamId) : null
 
   const regenerateDeck = () => {
     setAssignments(buildPreparedAssignments(selectedRoles))
@@ -246,7 +248,7 @@ export function RoleDeal({
   if (activeAssignment && activeRole && activeTeam) {
     return (
       <div className='min-h-app'>
-        <TeamBackground teamId={activeRole.team}>
+        <TeamBackground teamId={activeRoleTeamId ?? 'townsfolk'}>
           <div className='w-full max-w-lg mx-auto px-4 pt-4 pb-6'>
             <div className='flex items-center justify-between mb-5'>
               <BackButton onClick={handleCloseReveal} />
@@ -284,12 +286,13 @@ export function RoleDeal({
                 className='w-full bg-white/5 border border-parchment-500/30 text-parchment-100 placeholder-parchment-500 rounded-xl px-4 py-3 focus:outline-none focus:border-mystic-gold/50 focus:ring-1 focus:ring-mystic-gold/30 transition-colors'
               />
 
-              <div className='flex gap-3 mt-4'>
+              <div className='flex flex-col sm:flex-row gap-3 mt-4'>
                 <Button
                   onClick={handleCloseReveal}
                   variant='secondary'
                   size='default'
                   fullWidth
+                  className='sm:flex-1'
                 >
                   {t.common.back}
                 </Button>
@@ -298,6 +301,7 @@ export function RoleDeal({
                   variant={activeTeam.isEvil ? 'evil' : 'gold'}
                   size='default'
                   fullWidth
+                  className='sm:flex-1'
                   disabled={!nameDraft.trim()}
                 >
                   <Icon name='check' size='sm' className='mr-1' />

@@ -12,7 +12,7 @@ registerRoleTranslations('savant', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'savant',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'scrollText',
   nightOrder: null,
   chaos: 62,

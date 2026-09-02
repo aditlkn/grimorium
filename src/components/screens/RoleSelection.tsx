@@ -16,6 +16,7 @@ import {
   generateRolePools,
   selectPresetPools,
 } from '../../lib/scripts/generator'
+import { getRoleTeamId } from '../../lib/identity'
 import { getTeam, TeamId } from '../../lib/teams'
 import {
   useI18n,
@@ -30,7 +31,9 @@ import { cn } from '../../lib/utils'
 type Props = {
   players: string[]
   scriptId: ScriptId
+  initialSelectedRoles?: string[]
   onNext: (selectedRoles: string[]) => void
+  onManualAssign: (selectedRoles: string[]) => void
   onBack: () => void
 }
 
@@ -38,16 +41,25 @@ const TEAM_ORDER: TeamId[] = ['townsfolk', 'outsider', 'minion', 'demon']
 
 type SelectionMode = 'generate' | 'manual'
 
-export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
+export function RoleSelection({
+  players,
+  scriptId,
+  initialSelectedRoles = [],
+  onNext,
+  onManualAssign,
+  onBack,
+}: Props) {
   const { t, language } = useI18n()
   const script = getScript(scriptId) ?? getScript('custom')!
   const isCustomMode = !script.enforceDistribution
-  const defaultDemonRoleId =
-    script.roles.find((roleId) => ROLES[roleId]?.team === 'demon') ?? null
 
   // ── State ──────────────────────────────────────────────────────────
   const [roleCounts, setRoleCounts] = useState<Record<string, number>>(() => {
-    return defaultDemonRoleId ? { [defaultDemonRoleId]: 1 } : {}
+    const counts: Record<string, number> = {}
+    for (const roleId of initialSelectedRoles) {
+      counts[roleId] = (counts[roleId] ?? 0) + 1
+    }
+    return counts
   })
   const [mode, setMode] = useState<SelectionMode>(
     isCustomMode ? 'manual' : 'generate',
@@ -104,7 +116,7 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
     for (const roleId of script.roles) {
       const role = ROLES[roleId]
       if (role) {
-        result[role.team].push(role)
+        result[getRoleTeamId(role) ?? 'townsfolk'].push(role)
       }
     }
     return result
@@ -121,19 +133,21 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
     for (const [roleId, count] of Object.entries(roleCounts)) {
       const role = ROLES[roleId as keyof typeof ROLES]
       if (role) {
-        counts[role.team] += count
+        counts[getRoleTeamId(role) ?? 'townsfolk'] += count
       }
     }
     return counts
   }, [roleCounts])
 
   const demonCount = teamCounts.demon
+  const hasReachedPlayerCap = totalRoles >= players.length
 
   // ── Handlers ───────────────────────────────────────────────────────
 
   const toggleRole = (roleId: string) => {
     const current = roleCounts[roleId] ?? 0
     if (current === 0) {
+      if (totalRoles >= players.length) return
       setRoleCounts({ ...roleCounts, [roleId]: 1 })
     } else {
       const newCounts = { ...roleCounts }
@@ -143,6 +157,7 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
   }
 
   const incrementRole = (roleId: string) => {
+    if (totalRoles >= players.length) return
     setRoleCounts({
       ...roleCounts,
       [roleId]: (roleCounts[roleId] ?? 0) + 1,
@@ -181,6 +196,7 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
   }
 
   const handleNext = () => {
+    if (totalRoles !== players.length || demonCount < 1) return
     const selectedRoles: string[] = []
     for (const [roleId, count] of Object.entries(roleCounts)) {
       for (let i = 0; i < count; i++) {
@@ -190,7 +206,7 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
     onNext(selectedRoles)
   }
 
-  const canProceed = totalRoles >= players.length && demonCount >= 1
+  const canProceed = totalRoles === players.length && demonCount >= 1
 
   // ── Render ─────────────────────────────────────────────────────────
 
@@ -321,6 +337,7 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
             onToggle={toggleRole}
             onIncrement={incrementRole}
             onDecrement={decrementRole}
+            hasReachedPlayerCap={hasReachedPlayerCap}
           />
         )}
       </div>
@@ -379,6 +396,20 @@ export function RoleSelection({ players, scriptId, onNext, onBack }: Props) {
             ({totalRoles}/{players.length})
           </span>
           <Icon name='arrowRight' size='md' className='ml-1' />
+        </Button>
+        <Button
+          onClick={() => onManualAssign(
+            Object.entries(roleCounts).flatMap(([roleId, count]) =>
+              Array.from({ length: count }, () => roleId),
+            ),
+          )}
+          disabled={!canProceed}
+          fullWidth
+          size='lg'
+          variant='secondary'
+        >
+          <Icon name='bookUser' size='md' className='mr-2' />
+          {t.newGame.assignInGrimoire}
         </Button>
       </ScreenFooter>
     </div>
@@ -525,7 +556,7 @@ function GenerateView({
     for (const roleId of activePool.roles) {
       const role = ROLES[roleId]
       if (role) {
-        groups[role.team].push(roleId)
+        groups[getRoleTeamId(role) ?? 'townsfolk'].push(roleId)
       }
     }
     return groups
@@ -697,6 +728,7 @@ type ManualRoleGridProps = {
   onToggle: (roleId: string) => void
   onIncrement: (roleId: string) => void
   onDecrement: (roleId: string) => void
+  hasReachedPlayerCap: boolean
 }
 
 function ManualRoleGrid({
@@ -709,6 +741,7 @@ function ManualRoleGrid({
   onToggle,
   onIncrement,
   onDecrement,
+  hasReachedPlayerCap,
 }: ManualRoleGridProps) {
   return (
     <>
@@ -729,6 +762,7 @@ function ManualRoleGrid({
             onToggle={onToggle}
             onIncrement={onIncrement}
             onDecrement={onDecrement}
+            hasReachedPlayerCap={hasReachedPlayerCap}
           />
         )
       })}
@@ -751,6 +785,7 @@ type TeamSectionProps = {
   onToggle: (roleId: string) => void
   onIncrement: (roleId: string) => void
   onDecrement: (roleId: string) => void
+  hasReachedPlayerCap: boolean
 }
 
 function TeamSection({
@@ -764,6 +799,7 @@ function TeamSection({
   onToggle,
   onIncrement,
   onDecrement,
+  hasReachedPlayerCap,
 }: TeamSectionProps) {
   const { t } = useI18n()
   const team = getTeam(teamId)
@@ -834,6 +870,7 @@ function TeamSection({
               onToggle={() => onToggle(role.id)}
               onIncrement={() => onIncrement(role.id)}
               onDecrement={() => onDecrement(role.id)}
+              canAdd={!hasReachedPlayerCap || (roleCounts[role.id] ?? 0) > 0}
             />
           ))}
         </div>
@@ -855,6 +892,7 @@ type RoleCardProps = {
   onToggle: () => void
   onIncrement: () => void
   onDecrement: () => void
+  canAdd: boolean
 }
 
 function RoleCard({
@@ -866,6 +904,7 @@ function RoleCard({
   onToggle,
   onIncrement,
   onDecrement,
+  canAdd,
 }: RoleCardProps) {
   const isSelected = count > 0
   const desc = getRoleDescription(role.id, language)
@@ -874,8 +913,10 @@ function RoleCard({
     <button
       type='button'
       onClick={onToggle}
+      disabled={!isSelected && !canAdd}
       className={cn(
         'rounded-xl border-2 transition-all relative flex flex-col',
+        !isSelected && !canAdd && 'opacity-50 cursor-not-allowed',
         isSelected
           ? cn(
               team.colors.cardBorder,
@@ -965,7 +1006,13 @@ function RoleCard({
           <button
             type='button'
             onClick={onIncrement}
-            className='w-6 h-6 flex items-center justify-center text-parchment-400 hover:text-parchment-100 hover:bg-white/10 rounded transition-colors'
+            disabled={!canAdd}
+            className={cn(
+              'w-6 h-6 flex items-center justify-center rounded transition-colors',
+              canAdd
+                ? 'text-parchment-400 hover:text-parchment-100 hover:bg-white/10'
+                : 'text-parchment-600 cursor-not-allowed opacity-50',
+            )}
           >
             <Icon name='plus' size='xs' />
           </button>

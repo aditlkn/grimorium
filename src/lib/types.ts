@@ -4,8 +4,9 @@ import type { ScriptDefinition } from './scripts/types'
 // CORE TYPES
 // ============================================================================
 
-export type Team = 'townsfolk' | 'outsider' | 'minion' | 'demon'
 export type Alignment = 'good' | 'evil'
+export type RoleTeam = 'townsfolk' | 'outsider' | 'minion' | 'demon'
+export type WinningTeam = 'townsfolk' | 'demon'
 
 export type Phase = 'setup' | 'night' | 'day' | 'ended'
 
@@ -43,7 +44,7 @@ export type GameState = {
   phase: Phase
   round: number // 0 = setup, 1+ = actual rounds
   players: PlayerState[]
-  winner: Team | null
+  winner: WinningTeam | null
 }
 
 // ============================================================================

@@ -1,7 +1,9 @@
 import { getEffect, isMalfunctioning } from '../effects'
-import { getCurrentRoleId, getCurrentTeam } from '../identity'
+import { getCurrentRoleId, getCurrentRoleTeam } from '../identity'
 import { Game, GameState, PlayerState, hasEffect, isAlive } from '../types'
 import type { RoleDefinition } from './types'
+
+export type FalseInfoMode = 'malfunction' | 'vortox'
 
 export function isRoleMalfunctioning(player: PlayerState): boolean {
   return isMalfunctioning(player)
@@ -20,10 +22,18 @@ export function shouldForceFalseInfo(
   state: GameState,
   player: PlayerState,
 ): boolean {
-  return (
-    isRoleMalfunctioning(player) ||
-    (getCurrentTeam(player) === 'townsfolk' && isVortoxAlive(state))
-  )
+  return getFalseInfoMode(state, player) !== null
+}
+
+export function getFalseInfoMode(
+  state: GameState,
+  player: PlayerState,
+): FalseInfoMode | null {
+  if (isRoleMalfunctioning(player)) return 'malfunction'
+  if (getCurrentRoleTeam(player) === 'townsfolk' && isVortoxAlive(state)) {
+    return 'vortox'
+  }
+  return null
 }
 
 export function canActWhileDeadUnderVigormortis(

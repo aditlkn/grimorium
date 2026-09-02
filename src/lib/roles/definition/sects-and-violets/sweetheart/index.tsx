@@ -10,7 +10,7 @@ registerRoleTranslations('sweetheart', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'sweetheart',
-  team: 'outsider',
+  roleTeam: 'outsider',
   icon: 'handHeart',
   nightOrder: null,
   chaos: 56,

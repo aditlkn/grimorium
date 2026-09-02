@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import {
   createGame,
   PlayerSetup,
@@ -22,8 +22,10 @@ import {
   ScriptWakeOrderEditor,
   RoleSelection,
   RoleDeal,
+  ManualGrimoireAssignment,
   GameScreen,
   RolesLibrary,
+  ScriptLibraryScreen,
   HowToPlayScreen,
 } from './components/screens'
 import { LanguagePicker } from './components/atoms'
@@ -41,12 +43,23 @@ import {
 import { PreparedRoleAssignment } from './components/screens/RoleDeal'
 import { generateId } from './lib/types'
 
+const EngineV2LabScreen = lazy(() =>
+  import('./components/screens/EngineV2LabScreen').then((module) => ({
+    default: module.EngineV2LabScreen,
+  })),
+)
+
 // Internal screens for the new-game wizard (not routed — stays on "/")
 type NewGameScreen =
   | { type: 'new_game_players'; playerCount?: number }
   | { type: 'new_game_script'; playerCount: number }
   | { type: 'new_game_import_script'; playerCount: number }
-  | { type: 'new_game_roles'; playerCount: number; scriptId: ScriptId }
+  | {
+    type: 'new_game_roles'
+    playerCount: number
+    scriptId: ScriptId
+    selectedRoles?: string[]
+  }
   | {
     type: 'new_game_wake_order'
     playerCount: number
@@ -56,6 +69,12 @@ type NewGameScreen =
   }
   | {
     type: 'new_game_deal'
+    playerCount: number
+    scriptId: ScriptId
+    selectedRoles: string[]
+  }
+  | {
+    type: 'new_game_grimoire_assign'
     playerCount: number
     scriptId: ScriptId
     selectedRoles: string[]
@@ -234,6 +253,19 @@ function App() {
     })
   }
 
+  const handleManualAssign = (
+    playerCount: number,
+    scriptId: ScriptId,
+    selectedRoles: string[],
+  ) => {
+    setNewGameScreen({
+      type: 'new_game_grimoire_assign',
+      playerCount,
+      scriptId,
+      selectedRoles,
+    })
+  }
+
   const handleStartGame = (
     preparedAssignments: PreparedRoleAssignment[],
     scriptId: ScriptId,
@@ -344,6 +376,21 @@ function App() {
   }
 
   // ========================================================================
+  // Route: /scripts
+  // ========================================================================
+
+  if (routeType === 'scripts') {
+    return (
+      <div className='relative'>
+        <ScriptLibraryScreen onBack={() => navigate('/')} />
+        <div className='fixed top-4 right-4 z-50'>
+          <LanguagePicker variant='floating' />
+        </div>
+      </div>
+    )
+  }
+
+  // ========================================================================
   // Route: /how-to-play
   // ========================================================================
 
@@ -351,6 +398,29 @@ function App() {
     return (
       <div className='relative'>
         <HowToPlayScreen onBack={() => navigate('/')} />
+        <div className='fixed top-4 right-4 z-50'>
+          <LanguagePicker variant='floating' />
+        </div>
+      </div>
+    )
+  }
+
+  // ========================================================================
+  // Route: /engine-v2
+  // ========================================================================
+
+  if (routeType === 'engine-v2') {
+    return (
+      <div className='relative'>
+        <Suspense
+          fallback={
+            <div className='min-h-screen bg-night-950 px-6 py-12 text-center text-parchment-200'>
+              Loading engine lab...
+            </div>
+          }
+        >
+          <EngineV2LabScreen onBack={() => navigate('/')} />
+        </Suspense>
         <div className='fixed top-4 right-4 z-50'>
           <LanguagePicker variant='floating' />
         </div>
@@ -427,8 +497,16 @@ function App() {
             <RoleSelection
               players={makeSeatLabels(newGameScreen.playerCount)}
               scriptId={newGameScreen.scriptId}
+              initialSelectedRoles={newGameScreen.selectedRoles}
               onNext={(selectedRoles) =>
                 handleRolesNext(
+                  newGameScreen.playerCount,
+                  newGameScreen.scriptId,
+                  selectedRoles,
+                )
+              }
+              onManualAssign={(selectedRoles) =>
+                handleManualAssign(
                   newGameScreen.playerCount,
                   newGameScreen.scriptId,
                   selectedRoles,
@@ -462,6 +540,7 @@ function App() {
                     type: 'new_game_roles',
                     playerCount: newGameScreen.playerCount,
                     scriptId: 'custom',
+                    selectedRoles: newGameScreen.selectedRoles,
                   })
                   return
                 }
@@ -496,6 +575,27 @@ function App() {
                   type: 'new_game_roles',
                   playerCount: newGameScreen.playerCount,
                   scriptId: newGameScreen.scriptId,
+                  selectedRoles: newGameScreen.selectedRoles,
+                })
+              }
+            />
+          )
+
+        case 'new_game_grimoire_assign':
+          return (
+            <ManualGrimoireAssignment
+              playerCount={newGameScreen.playerCount}
+              scriptId={newGameScreen.scriptId}
+              selectedRoles={newGameScreen.selectedRoles}
+              onComplete={(assignments) =>
+                handleStartGame(assignments, newGameScreen.scriptId)
+              }
+              onBack={() =>
+                setNewGameScreen({
+                  type: 'new_game_roles',
+                  playerCount: newGameScreen.playerCount,
+                  scriptId: newGameScreen.scriptId,
+                  selectedRoles: newGameScreen.selectedRoles,
                 })
               }
             />
@@ -510,7 +610,9 @@ function App() {
         onContinue={(gameId) => navigate(`/game/${gameId}`)}
         onLoadGame={(gameId) => navigate(`/game/${gameId}`)}
         onRolesLibrary={() => navigate('/roles')}
+        onScriptLibrary={() => navigate('/scripts')}
         onHowToPlay={() => navigate('/how-to-play')}
+        onEngineV2Lab={() => navigate('/engine-v2')}
       />
     )
   }

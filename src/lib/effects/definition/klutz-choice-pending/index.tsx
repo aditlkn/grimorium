@@ -3,8 +3,8 @@ import {
   DayActionDefinition,
   DayActionProps,
 } from '../../../pipeline/types'
-import { hasEffect } from '../../../types'
-import { getCurrentTeam } from '../../../identity'
+import { hasEffect, isAlive } from '../../../types'
+import { getCurrentAlignment } from '../../../identity'
 import { StorytellerChoiceScreen } from '../../../../components/screens/SectsAndVioletsActionScreens'
 
 function KlutzResolution({
@@ -20,16 +20,14 @@ function KlutzResolution({
       title='Klutz'
       description='Record which player the Klutz publicly chose.'
       confirmLabel='Resolve Klutz choice'
-      players={state.players.filter((player) => player.id !== playerId)}
+      players={state.players.filter(
+        (player) => player.id !== playerId && isAlive(player),
+      )}
       onBack={onBack}
       onConfirm={([targetId]) => {
         const target = state.players.find((player) => player.id === targetId)
-        const targetTeam = target ? getCurrentTeam(target) : null
-        const evilWins = Boolean(
-          targetTeam &&
-            targetTeam !== 'townsfolk' &&
-            targetTeam !== 'outsider',
-        )
+        const targetAlignment = target ? getCurrentAlignment(target) : null
+        const evilWins = targetAlignment === 'evil'
 
         onComplete({
           entries: [
