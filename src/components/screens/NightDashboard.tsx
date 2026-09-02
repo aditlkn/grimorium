@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Game, GameState, PlayerState, RichMessage } from '../../lib/types'
 import { getRole } from '../../lib/roles'
+import { getRoleTeamId } from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import {
   getNightRolesStatus,
@@ -481,7 +482,8 @@ function NightActionRow({
 }) {
   const { language, t } = useI18n()
   const role = getRole(roleStatus.roleId)
-  const team = role ? getTeam(role.team) : null
+  const roleTeamId = getRoleTeamId(role)
+  const team = roleTeamId ? getTeam(roleTeamId) : null
 
   const roleName = useMemo(() => {
     if (roleStatus.dashboardKind === 'minion_info') {

@@ -21,7 +21,7 @@ registerRoleTranslations('poisoner', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'poisoner',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'flask',
   nightOrder: 5,
   chaos: 45,

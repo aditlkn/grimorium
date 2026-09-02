@@ -1,5 +1,8 @@
-import { getCurrentRoleId, getCurrentTeam } from '../../lib/identity'
-import { getTeam } from '../../lib/teams'
+import {
+  getCurrentAlignment,
+  getCurrentRoleId,
+  getCurrentRoleTeam,
+} from '../../lib/identity'
 import { useI18n } from '../../lib/i18n'
 import { RoleCard } from './RoleCard'
 import { TeamBackground, CardLink } from './TeamBackground'
@@ -19,9 +22,8 @@ export function DefaultRoleReveal({ player, onContinue }: RoleRevealProps) {
   const { t } = useI18n()
   const { requestHandback } = useHandback()
   const roleId = getCurrentRoleId(player)
-  const teamId = getCurrentTeam(player) ?? 'townsfolk'
-  const team = getTeam(teamId)
-  const isEvil = team.isEvil
+  const teamId = getCurrentRoleTeam(player) ?? 'townsfolk'
+  const isEvil = getCurrentAlignment(player) === 'evil'
 
   return (
     <TeamBackground teamId={teamId}>

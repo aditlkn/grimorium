@@ -22,7 +22,7 @@ registerRoleTranslations('town_crier', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'town_crier',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'conciergeBell',
   nightOrder: 43,
   chaos: 28,

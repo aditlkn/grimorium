@@ -6,7 +6,7 @@ import {
   NominateIntent,
 } from '../../../pipeline/types'
 import { hasEffect, isAlive } from '../../../types'
-import { getCurrentTeam } from '../../../identity'
+import { getCurrentRoleTeam } from '../../../identity'
 
 const triggerHandler: IntentHandler = {
   intentType: ['kill', 'execute', 'nominate'],
@@ -20,7 +20,7 @@ const triggerHandler: IntentHandler = {
           : (intent as NominateIntent).nominatorId
 
     const hasAliveEvilDemon = state.players.some(
-      (player) => isAlive(player) && getCurrentTeam(player) === 'demon',
+      (player) => isAlive(player) && getCurrentRoleTeam(player) === 'demon',
     )
     const witchCursedNominationDeath =
       intent.type === 'nominate' && hasEffect(effectPlayer, 'witch_curse')
@@ -34,7 +34,7 @@ const triggerHandler: IntentHandler = {
   },
   handle: (_intent, effectPlayer, state) => {
     const demon = state.players.find(
-      (player) => isAlive(player) && getCurrentTeam(player) === 'demon',
+      (player) => isAlive(player) && getCurrentRoleTeam(player) === 'demon',
     )
 
     if (!demon) return { action: 'allow' }

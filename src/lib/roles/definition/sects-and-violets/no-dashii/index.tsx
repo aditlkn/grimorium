@@ -21,7 +21,7 @@ registerRoleTranslations('no_dashii', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'no_dashii',
-  team: 'demon',
+  roleTeam: 'demon',
   icon: 'cloudMoon',
   nightOrder: 32,
   chaos: 88,

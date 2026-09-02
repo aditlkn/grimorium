@@ -1,5 +1,5 @@
 import { PlayerState } from '../../lib/types'
-import { getCurrentRole } from '../../lib/identity'
+import { getCurrentRole, getRoleTeamId } from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import { useI18n, getRoleName, interpolate } from '../../lib/i18n'
 import { Icon } from '../atoms'
@@ -36,7 +36,8 @@ export function NightActionLayout({
 }: Props) {
   const { t, language } = useI18n()
   const role = getCurrentRole(player)
-  const team = role ? getTeam(role.team) : null
+  const roleTeamId = getRoleTeamId(role)
+  const team = roleTeamId ? getTeam(roleTeamId) : null
 
   const isEvil = team?.isEvil ?? false
 

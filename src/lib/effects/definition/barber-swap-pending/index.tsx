@@ -5,7 +5,7 @@ import {
   NightFollowUpProps,
 } from '../../../pipeline/types'
 import { hasEffect } from '../../../types'
-import { getCurrentTeam } from '../../../identity'
+import { getCurrentRoleTeam } from '../../../identity'
 import { buildTransformationStateChanges } from '../../../transformations'
 import { StorytellerChoiceScreen } from '../../../../components/screens/SectsAndVioletsActionScreens'
 
@@ -121,7 +121,7 @@ const nightFollowUp: NightFollowUpDefinition = {
   icon: 'shuffle',
   getLabel: () => 'Barber (Demon choice)',
   condition: (player) =>
-    hasEffect(player, 'barber_swap_pending') && getCurrentTeam(player) === 'demon',
+    hasEffect(player, 'barber_swap_pending') && getCurrentRoleTeam(player) === 'demon',
   placement: 'before_player_action',
   ActionComponent: BarberNightFollowUp,
 }

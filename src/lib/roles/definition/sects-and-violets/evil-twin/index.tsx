@@ -5,7 +5,7 @@ import {
   getRoleTranslations,
   useI18n,
 } from '../../../../i18n'
-import { getCurrentTeam } from '../../../../identity'
+import { getCurrentAlignment } from '../../../../identity'
 import { DefaultRoleReveal } from '../../../../../components/items/DefaultRoleReveal'
 import { StorytellerChoiceScreen } from '../../../../../components/screens/SectsAndVioletsActionScreens'
 
@@ -20,8 +20,7 @@ function EvilTwinSetupAction({ player, state, onComplete }: SetupActionProps) {
   const roleT = getRoleTranslations('evil_twin', language)
   const availablePlayers = state.players.filter((candidate) => {
     if (candidate.id === player.id) return false
-    const team = getCurrentTeam(candidate)
-    return team === 'townsfolk' || team === 'outsider'
+    return getCurrentAlignment(candidate) === 'good'
   })
 
   return (
@@ -87,7 +86,7 @@ function EvilTwinSetupAction({ player, state, onComplete }: SetupActionProps) {
 
 const definition: RoleDefinition = {
   id: 'evil_twin',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'users',
   nightOrder: null,
   chaos: 84,

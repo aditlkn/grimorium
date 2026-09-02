@@ -12,10 +12,11 @@ import {
 } from './types'
 import { getEffect, isMalfunctioning } from './effects'
 import {
-  getAlignmentForTeam,
+  getAlignmentForRoleTeam,
   getCurrentRole,
   getCurrentRoleId,
-  getCurrentTeam,
+  getCurrentRoleTeam,
+  getRoleTeamId,
   initializePlayerIdentity,
 } from './identity'
 import { getRole } from './roles'
@@ -80,8 +81,8 @@ export function createGame(
       name: p.name,
       roleId: p.roleId,
       baseRoleId: p.roleId,
-      baseAlignment: getAlignmentForTeam(role?.team),
-      currentAlignment: getAlignmentForTeam(role?.team),
+      baseAlignment: getAlignmentForRoleTeam(getRoleTeamId(role)),
+      currentAlignment: getAlignmentForRoleTeam(getRoleTeamId(role)),
       effects,
     }
   })
@@ -193,7 +194,9 @@ export function addHistoryEntry(
         }
 
         if (hasRoleChange && !hasAlignmentChange) {
-          currentAlignment = getAlignmentForTeam(getRole(roleId)?.team)
+          currentAlignment = getAlignmentForRoleTeam(
+            getRoleTeamId(getRole(roleId)),
+          )
         }
 
         if (changeAlignments?.[player.id]) {
@@ -207,11 +210,12 @@ export function addHistoryEntry(
           baseRoleId: player.baseRoleId ?? player.roleId,
           baseAlignment:
             player.baseAlignment ??
-            getAlignmentForTeam(
-              getRole(player.baseRoleId ?? player.roleId)?.team,
+            getAlignmentForRoleTeam(
+              getRoleTeamId(getRole(player.baseRoleId ?? player.roleId)),
             ),
           currentAlignment:
-            currentAlignment ?? getAlignmentForTeam(getRole(roleId)?.team),
+            currentAlignment ??
+            getAlignmentForRoleTeam(getRoleTeamId(getRole(roleId))),
         }
 
         return initializePlayerIdentity(nextPlayer)
@@ -572,8 +576,8 @@ function findPitHagDemonCreationContext(
     const toRoleId = entry.data.toRole as string | undefined
     if (!fromRoleId || !toRoleId) continue
 
-    const fromTeam = getRole(fromRoleId)?.team
-    const toTeam = getRole(toRoleId)?.team
+    const fromTeam = getRoleTeamId(getRole(fromRoleId))
+    const toTeam = getRoleTeamId(getRole(toRoleId))
     if (toTeam !== 'demon' || fromTeam === 'demon') continue
 
     const sourcePlayerId =
@@ -611,7 +615,7 @@ function getNightSystemSteps(game: Game, state: GameState): NightSystemStep[] {
       : undefined
 
     for (const player of state.players) {
-      if (getCurrentTeam(player) !== 'minion') continue
+      if (getCurrentRoleTeam(player) !== 'minion') continue
       steps.push({
         systemStepId: 'minion_info',
         roleId: getCurrentRoleId(player),
@@ -624,7 +628,7 @@ function getNightSystemSteps(game: Game, state: GameState): NightSystemStep[] {
     }
 
     for (const player of state.players) {
-      if (getCurrentTeam(player) !== 'demon') {
+      if (getCurrentRoleTeam(player) !== 'demon') {
         continue
       }
       steps.push({
@@ -1298,7 +1302,9 @@ export function checkWinCondition(
   game?: Game,
 ): 'townsfolk' | 'demon' | null {
   const alivePlayers = getAlivePlayers(state)
-  const aliveDemons = alivePlayers.filter((p) => getCurrentTeam(p) === 'demon')
+  const aliveDemons = alivePlayers.filter(
+    (p) => getCurrentRoleTeam(p) === 'demon',
+  )
 
   // Good wins if all demons are dead
   if (aliveDemons.length === 0) {
@@ -1413,7 +1419,9 @@ function inferWinReason(
   winner: 'townsfolk' | 'demon',
 ): WinReasonDetails {
   const alivePlayers = getAlivePlayers(state)
-  const aliveDemons = alivePlayers.filter((player) => getCurrentTeam(player) === 'demon')
+  const aliveDemons = alivePlayers.filter(
+    (player) => getCurrentRoleTeam(player) === 'demon',
+  )
 
   if (winner === 'townsfolk' && aliveDemons.length === 0) {
     return { code: 'all_demons_dead' }

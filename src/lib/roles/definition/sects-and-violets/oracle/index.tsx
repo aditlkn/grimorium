@@ -22,7 +22,7 @@ registerRoleTranslations('oracle', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'oracle',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'bookMarked',
   nightOrder: 41,
   chaos: 30,

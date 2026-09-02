@@ -1,5 +1,5 @@
 import { isMalfunctioning } from './effects'
-import { getCurrentRoleId, getCurrentTeam } from './identity'
+import { getCurrentRoleId, getCurrentRoleTeam } from './identity'
 import { EffectToAdd } from './roles/types'
 import { GameState, PlayerState, generateId, isAlive } from './types'
 
@@ -54,7 +54,7 @@ function findClosestAliveTownsfolkNeighbor(
   if (originIndex === -1) return null
 
   const isAliveTownsfolk = (player: PlayerState) =>
-    isAlive(player) && getCurrentTeam(player) === 'townsfolk'
+    isAlive(player) && getCurrentRoleTeam(player) === 'townsfolk'
 
   if (preferredId) {
     const preferred = state.players.find((player) => player.id === preferredId)
@@ -137,7 +137,7 @@ export function syncDerivedEffects(state: GameState): GameState {
       if (originIndex !== -1) {
         const matchesTownsfolk = (candidate: PlayerState) =>
           candidate.id !== player.id &&
-          getCurrentTeam(candidate) === 'townsfolk'
+          getCurrentRoleTeam(candidate) === 'townsfolk'
 
         const leftNeighbor = firstMatchingOnSide(
           cleanState,

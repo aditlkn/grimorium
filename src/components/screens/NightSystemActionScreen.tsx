@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Game, GameState, getPlayer, hasEffect } from '../../lib/types'
-import { getCurrentRoleId } from '../../lib/identity'
+import { getCurrentRoleId, getRoleTeamId } from '../../lib/identity'
 import { getRole, getRolesForGame } from '../../lib/roles'
 import { getPreparedNightActionData } from '../../lib/game'
 import {
@@ -68,7 +68,7 @@ export function NightSystemActionScreen({
     const rolesInPlay = new Set(state.players.map((candidate) => getCurrentRoleId(candidate)))
     return getRolesForGame(game).filter(
       (candidate) =>
-        isGoodTeam(candidate.team) &&
+        isGoodTeam(getRoleTeamId(candidate) ?? 'townsfolk') &&
         !rolesInPlay.has(candidate.id),
     )
   }, [game, state.players])

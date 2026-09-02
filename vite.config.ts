@@ -5,6 +5,8 @@ import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+const enablePwa = process.env.VITE_ENABLE_PWA === 'true'
+
 function getGitBranchName(): string {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD', {
@@ -37,37 +39,39 @@ export default defineConfig({
   base: '/',
   plugins: [
     react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-      manifest: {
-        name: 'Grimorium',
-        short_name: 'Grimorium',
-        description: 'A companion app for Blood on the Clocktower that handles the clockwork so you can focus on the story.',
-        theme_color: '#0D0D0D',
-        background_color: '#0D0D0D',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      }
-    })
-  ],
+    enablePwa &&
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        manifest: {
+          name: 'Grimorium',
+          short_name: 'Grimorium',
+          description:
+            'A companion app for Blood on the Clocktower that handles the clockwork so you can focus on the story.',
+          theme_color: '#0D0D0D',
+          background_color: '#0D0D0D',
+          display: 'standalone',
+          scope: '/',
+          start_url: '/',
+          icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+      }),
+  ].filter(Boolean),
 })

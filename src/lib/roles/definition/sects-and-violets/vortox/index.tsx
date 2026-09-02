@@ -21,7 +21,7 @@ registerRoleTranslations('vortox', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'vortox',
-  team: 'demon',
+  roleTeam: 'demon',
   icon: 'star',
   nightOrder: 33,
   chaos: 90,

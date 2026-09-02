@@ -1,5 +1,5 @@
 import { getEffect, isMalfunctioning } from '../effects'
-import { getCurrentRoleId, getCurrentTeam } from '../identity'
+import { getCurrentRoleId, getCurrentRoleTeam } from '../identity'
 import { Game, GameState, PlayerState, hasEffect, isAlive } from '../types'
 import type { RoleDefinition } from './types'
 
@@ -30,7 +30,7 @@ export function getFalseInfoMode(
   player: PlayerState,
 ): FalseInfoMode | null {
   if (isRoleMalfunctioning(player)) return 'malfunction'
-  if (getCurrentTeam(player) === 'townsfolk' && isVortoxAlive(state)) {
+  if (getCurrentRoleTeam(player) === 'townsfolk' && isVortoxAlive(state)) {
     return 'vortox'
   }
   return null

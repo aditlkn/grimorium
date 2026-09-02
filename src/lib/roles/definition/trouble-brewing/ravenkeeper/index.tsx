@@ -35,6 +35,7 @@ import { MalfunctionConfigStep } from '../../../../../components/items'
 import { Perception } from '../../../../pipeline/types'
 import { cn } from '../../../../../lib/utils'
 import { getFalseInfoMode, shouldForceFalseInfo } from '../../../runtime-helpers'
+import { getRoleTeamId } from '../../../../identity'
 
 import en from './i18n/en'
 import es from './i18n/es'
@@ -83,7 +84,7 @@ type Phase =
 
 const definition: RoleDefinition = {
   id: 'ravenkeeper',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'birdHouse',
   nightOrder: 35,
   chaos: 30,
@@ -374,7 +375,7 @@ const definition: RoleDefinition = {
     if (!displayedRoleId) return null
 
     const shownRole = getRole(displayedRoleId)
-    const shownTeamId = shownRole?.team ?? 'townsfolk'
+    const shownTeamId = getRoleTeamId(shownRole) ?? 'townsfolk'
     const shownTeam = getTeam(shownTeamId)
 
     return (

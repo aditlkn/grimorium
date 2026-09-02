@@ -175,7 +175,7 @@ export type RoleId =
 
 export type RoleDefinition = {
   id: RoleId
-  team: TeamId
+  roleTeam: TeamId
   icon: IconName
   evilInfoModifier?: EvilInfoModifier
 

@@ -42,7 +42,7 @@ export function getDreamerSelectableTargets(
 
 const definition: RoleDefinition = {
   id: 'dreamer',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'moon',
   nightOrder: 18,
   chaos: 45,

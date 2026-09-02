@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { isAlive } from '../../lib/types'
-import { getCurrentTeam } from '../../lib/identity'
+import { getCurrentRoleTeam } from '../../lib/identity'
 import { isMalfunctioning } from '../../lib/effects'
 import { useI18n } from '../../lib/i18n'
 import { DayActionProps } from '../../lib/pipeline/types'
@@ -33,7 +33,7 @@ export function SlayerActionScreen({
 
     // When malfunctioning, the shot always misses
     const isDemon =
-      !isMalfunctioning(slayer) && getCurrentTeam(target) === 'demon'
+      !isMalfunctioning(slayer) && getCurrentRoleTeam(target) === 'demon'
 
     if (isDemon) {
       onComplete({

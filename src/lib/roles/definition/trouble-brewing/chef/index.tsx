@@ -86,7 +86,7 @@ type Phase =
 
 const definition: RoleDefinition = {
   id: 'chef',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'chefHat',
   nightOrder: 13,
   chaos: 20,

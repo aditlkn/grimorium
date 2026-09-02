@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Game, GameState, PlayerState } from '../../lib/types'
+import { getRoleTeamId } from '../../lib/identity'
 import { RoleDefinition, NightActionResult } from '../../lib/roles/types'
 import { getRole, getRolesForGame } from '../../lib/roles/index'
 import { getTeam, TeamId } from '../../lib/teams'
@@ -136,7 +137,9 @@ export function InfoRoleNightAction({
   // All defined roles of target team (for malfunction role picker)
   const targetTeamAllRoles = useMemo(
     () =>
-      getRolesForGame(game).filter((r) => r.team === config.targetTeam),
+      getRolesForGame(game).filter(
+        (role) => getRoleTeamId(role) === config.targetTeam,
+      ),
     [game, config.targetTeam],
   )
 
@@ -146,8 +149,11 @@ export function InfoRoleNightAction({
 
   /** Players whose actual team or canRegisterAs includes the target team */
   const isTargetTeamPlayer = (p: PlayerState): boolean => {
-    const perception = perceive(p, player, 'team', state)
-    return perception.team === config.targetTeam || canRegisterAsTeam(p, config.targetTeam)
+    const perception = perceive(p, player, 'roleTeam', state)
+    return (
+      perception.roleTeam === config.targetTeam ||
+      canRegisterAsTeam(p, config.targetTeam)
+    )
   }
 
   const targetGroupPlayers = useMemo(
@@ -192,8 +198,11 @@ export function InfoRoleNightAction({
   const targetsInSelection = selectedPlayers.filter((playerId) => {
     const p = state.players.find((pl) => pl.id === playerId)
     if (!p) return false
-    const perception = perceive(p, player, 'team', state)
-    return perception.team === config.targetTeam || canRegisterAsTeam(p, config.targetTeam)
+    const perception = perceive(p, player, 'roleTeam', state)
+    return (
+      perception.roleTeam === config.targetTeam ||
+      canRegisterAsTeam(p, config.targetTeam)
+    )
   })
 
   // ================================================================
@@ -208,12 +217,12 @@ export function InfoRoleNightAction({
     for (const pid of targetsInSelection) {
       const p = state.players.find((pl) => pl.id === pid)
       if (!p) continue
-      const pTeam = perceive(p, player, 'team', state)
+      const pTeam = perceive(p, player, 'roleTeam', state)
 
       // If the player's actual team matches, show their perceived role
       // If the player can only register as target team (via misregistration), show ALL target team roles
       const pRoles =
-        pTeam.team === config.targetTeam
+        pTeam.roleTeam === config.targetTeam
           ? (() => {
             const rp = perceive(p, player, 'role', state)
             const r = getRole(rp.roleId)
@@ -439,7 +448,7 @@ export function InfoRoleNightAction({
     const preparedRoleId = preparedData.shownRoleId
     if (!preparedRoleId) return null
     const preparedRole = getRole(preparedRoleId)
-    const preparedTeamId = preparedRole?.team ?? 'townsfolk'
+    const preparedTeamId = getRoleTeamId(preparedRole) ?? 'townsfolk'
     const preparedTeam = getTeam(preparedTeamId)
 
     return (
@@ -820,7 +829,7 @@ export function InfoRoleNightAction({
   if (!selectedRoleId) return null
 
   const shownRole = getRole(selectedRoleId)
-  const shownTeamId = shownRole?.team ?? 'townsfolk'
+  const shownTeamId = getRoleTeamId(shownRole) ?? 'townsfolk'
   const shownTeam = getTeam(shownTeamId)
 
   return (

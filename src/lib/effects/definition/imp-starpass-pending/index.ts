@@ -3,6 +3,7 @@ import { IntentHandler, KillIntent } from '../../../pipeline/types'
 import { StarpassSelectUI } from '../../../../components/items/StarpassSelectUI'
 import { isAlive } from '../../../types'
 import { getRole } from '../../../roles'
+import { getRoleTeamId } from '../../../identity'
 import { registerEffectTranslations } from '../../../i18n'
 import { buildTransformationStateChanges } from '../../../transformations'
 
@@ -39,7 +40,7 @@ const starpassHandler: IntentHandler = {
     const aliveMinions = state.players.filter((p) => {
       if (!isAlive(p)) return false
       const role = getRole(p.roleId)
-      return role?.team === 'minion'
+      return getRoleTeamId(role) === 'minion'
     })
 
     // No alive minions — just allow the kill (Imp dies, no starpass)

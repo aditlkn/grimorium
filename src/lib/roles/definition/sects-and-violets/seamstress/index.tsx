@@ -36,7 +36,7 @@ function hasUsedSeamstress(game: Game, playerId: string): boolean {
 
 const definition: RoleDefinition = {
   id: 'seamstress',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'shirt',
   nightOrder: 31,
   chaos: 32,

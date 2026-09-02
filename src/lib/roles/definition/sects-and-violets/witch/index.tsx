@@ -17,7 +17,7 @@ registerRoleTranslations('witch', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'witch',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'sparkles',
   nightOrder: 6,
   chaos: 56,

@@ -22,7 +22,7 @@ registerRoleTranslations('flowergirl', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'flowergirl',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'flower',
   nightOrder: 42,
   chaos: 27,

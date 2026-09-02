@@ -4,7 +4,7 @@ import {
   DayActionProps,
 } from '../../../pipeline/types'
 import { hasEffect, isAlive } from '../../../types'
-import { getCurrentTeam } from '../../../identity'
+import { getCurrentAlignment } from '../../../identity'
 import { StorytellerChoiceScreen } from '../../../../components/screens/SectsAndVioletsActionScreens'
 
 function KlutzResolution({
@@ -26,12 +26,8 @@ function KlutzResolution({
       onBack={onBack}
       onConfirm={([targetId]) => {
         const target = state.players.find((player) => player.id === targetId)
-        const targetTeam = target ? getCurrentTeam(target) : null
-        const evilWins = Boolean(
-          targetTeam &&
-            targetTeam !== 'townsfolk' &&
-            targetTeam !== 'outsider',
-        )
+        const targetAlignment = target ? getCurrentAlignment(target) : null
+        const evilWins = targetAlignment === 'evil'
 
         onComplete({
           entries: [

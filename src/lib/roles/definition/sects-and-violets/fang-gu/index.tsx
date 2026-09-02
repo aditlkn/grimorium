@@ -6,7 +6,7 @@ import {
   getRoleTranslations,
   useI18n,
 } from '../../../../i18n'
-import { getCurrentTeam } from '../../../../identity'
+import { getCurrentRoleTeam } from '../../../../identity'
 import { DefaultRoleReveal } from '../../../../../components/items/DefaultRoleReveal'
 import { PlayerPickerList } from '../../../../../components/inputs'
 import { Button, Icon } from '../../../../../components/atoms'
@@ -22,7 +22,7 @@ registerRoleTranslations('fang_gu', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'fang_gu',
-  team: 'demon',
+  roleTeam: 'demon',
   icon: 'ghost',
   nightOrder: 30,
   chaos: 82,
@@ -60,7 +60,7 @@ const definition: RoleDefinition = {
               action: 'fang_gu_kill',
               targetId: target.id,
               hitOutsider:
-                !malfunctioning && getCurrentTeam(target) === 'outsider',
+                !malfunctioning && getCurrentRoleTeam(target) === 'outsider',
               malfunctioned: malfunctioning || undefined,
             },
           },

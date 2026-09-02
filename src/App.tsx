@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import {
   createGame,
   PlayerSetup,
@@ -42,6 +42,12 @@ import {
 } from './lib/scripts'
 import { PreparedRoleAssignment } from './components/screens/RoleDeal'
 import { generateId } from './lib/types'
+
+const EngineV2LabScreen = lazy(() =>
+  import('./components/screens/EngineV2LabScreen').then((module) => ({
+    default: module.EngineV2LabScreen,
+  })),
+)
 
 // Internal screens for the new-game wizard (not routed — stays on "/")
 type NewGameScreen =
@@ -400,6 +406,29 @@ function App() {
   }
 
   // ========================================================================
+  // Route: /engine-v2
+  // ========================================================================
+
+  if (routeType === 'engine-v2') {
+    return (
+      <div className='relative'>
+        <Suspense
+          fallback={
+            <div className='min-h-screen bg-night-950 px-6 py-12 text-center text-parchment-200'>
+              Loading engine lab...
+            </div>
+          }
+        >
+          <EngineV2LabScreen onBack={() => navigate('/')} />
+        </Suspense>
+        <div className='fixed top-4 right-4 z-50'>
+          <LanguagePicker variant='floating' />
+        </div>
+      </div>
+    )
+  }
+
+  // ========================================================================
   // Route: / (home — main menu + new-game wizard)
   // ========================================================================
 
@@ -583,6 +612,7 @@ function App() {
         onRolesLibrary={() => navigate('/roles')}
         onScriptLibrary={() => navigate('/scripts')}
         onHowToPlay={() => navigate('/how-to-play')}
+        onEngineV2Lab={() => navigate('/engine-v2')}
       />
     )
   }

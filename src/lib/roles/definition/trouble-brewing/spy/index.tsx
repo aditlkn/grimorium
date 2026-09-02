@@ -32,7 +32,7 @@ type Phase = 'step_list' | 'view_grimoire'
 
 const definition: RoleDefinition = {
   id: 'spy',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'hatGlasses',
   nightOrder: 36,
   chaos: 55,

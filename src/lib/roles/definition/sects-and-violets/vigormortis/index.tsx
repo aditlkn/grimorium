@@ -21,7 +21,7 @@ registerRoleTranslations('vigormortis', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'vigormortis',
-  team: 'demon',
+  roleTeam: 'demon',
   icon: 'crown',
   nightOrder: 31,
   chaos: 86,

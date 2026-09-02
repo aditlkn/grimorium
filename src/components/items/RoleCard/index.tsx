@@ -1,4 +1,5 @@
 import { getRole } from '../../../lib/roles'
+import { getRoleTeamId } from '../../../lib/identity'
 import { getTeam, TeamId } from '../../../lib/teams'
 import {
   useI18n,
@@ -69,8 +70,8 @@ export function RoleCard({ roleId }: Props) {
     )
   }
 
-  const team = getTeam(role.team)
-  const teamId = role.team as TeamId
+  const teamId = (getRoleTeamId(role) ?? 'townsfolk') as TeamId
+  const team = getTeam(teamId)
 
   const teamTranslation = t.teams[teamId]
 

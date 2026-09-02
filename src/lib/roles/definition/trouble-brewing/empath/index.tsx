@@ -44,7 +44,7 @@ type Phase =
 
 const definition: RoleDefinition = {
   id: 'empath',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'handHeart',
   nightOrder: 14,
   chaos: 25,

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { getRole } from '../../lib/roles'
+import { getRoleTeamId } from '../../lib/identity'
 import type { RoleId } from '../../lib/roles/types'
 import { getRoleIdsForScript, type ScriptId } from '../../lib/scripts'
 import { getTeam } from '../../lib/teams'
@@ -109,7 +110,7 @@ export function ManualGrimoireAssignment({
   const drunkBelievedRoleChoices = useMemo(() => {
     return scriptRoleIds.filter((roleId) => {
       const role = getRole(roleId)
-      return role?.team === 'townsfolk' && !selectedRoles.includes(roleId)
+      return getRoleTeamId(role) === 'townsfolk' && !selectedRoles.includes(roleId)
     })
   }, [scriptRoleIds, selectedRoles])
 
@@ -239,7 +240,8 @@ export function ManualGrimoireAssignment({
               {seatPositions.map(({ seat, x, y }) => {
                 const isSelected = seat.slotId === selectedSeatId
                 const role = seat.roleId ? getRole(seat.roleId) : null
-                const team = role ? getTeam(role.team) : null
+                const teamId = role ? getRoleTeamId(role) : null
+                const team = teamId ? getTeam(teamId) : null
 
                 return (
                   <button
@@ -317,7 +319,7 @@ export function ManualGrimoireAssignment({
                   return (
                     <Badge
                       key={`${roleId}-${index}`}
-                      variant={role?.team}
+                      variant={role ? (getRoleTeamId(role) ?? 'townsfolk') : 'townsfolk'}
                       className='inline-flex items-center gap-1'
                     >
                       {role && <Icon name={role.icon} size='xs' />}
@@ -381,7 +383,7 @@ export function ManualGrimoireAssignment({
                   {availableRolesForSeat.map((roleId) => {
                     const role = getRole(roleId)
                     if (!role) return null
-                    const team = getTeam(role.team)
+                    const team = getTeam(getRoleTeamId(role) ?? 'townsfolk')
                     const isSelectedRole = selectedSeat.roleId === roleId
 
                     return (

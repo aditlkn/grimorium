@@ -20,7 +20,7 @@ registerRoleTranslations('clockmaker', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'clockmaker',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'history',
   nightOrder: 16,
   chaos: 24,

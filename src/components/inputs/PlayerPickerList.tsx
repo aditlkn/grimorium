@@ -1,6 +1,10 @@
 import { useMemo } from 'react'
 import { PlayerState, hasEffect } from '../../lib/types'
-import { getCurrentAlignment, getCurrentRole } from '../../lib/identity'
+import {
+  getCurrentAlignment,
+  getCurrentRole,
+  getRoleTeamId,
+} from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import { getEffect } from '../../lib/effects'
 import { useI18n, getRoleName as getRegistryRoleName } from '../../lib/i18n'
@@ -97,7 +101,8 @@ export function PlayerPickerList({
     const isDisabled = (!isSelected && isAtMax && selectionCount !== 1) ||
       (disabledSet?.has(player.id) ?? false)
     const role = getCurrentRole(player)
-    const team = role ? getTeam(role.team) : null
+    const roleTeamId = getRoleTeamId(role)
+    const team = roleTeamId ? getTeam(roleTeamId) : null
     const alignment = getCurrentAlignment(player)
     const isEvilAlignment = alignment === 'evil'
     const isDead = hasEffect(player, 'dead')

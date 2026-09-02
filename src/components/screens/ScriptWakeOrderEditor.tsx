@@ -7,6 +7,7 @@ import {
   EditableScriptDraft,
   ScriptWakeEntry,
 } from '../../lib/scripts'
+import { getRoleTeamId } from '../../lib/identity'
 import { RoleId } from '../../lib/roles/types'
 import { getRole } from '../../lib/roles'
 import { cn } from '../../lib/utils'
@@ -319,7 +320,7 @@ export function ScriptWakeOrderEditor({
                         )}
                       </div>
                       <div className='text-xs text-parchment-500 uppercase tracking-[0.14em]'>
-                        {role?.team ?? ''}
+                        {getRoleTeamId(role) ?? ''}
                       </div>
                       {entry.note && (
                         <div className='text-xs text-parchment-400 mt-1'>

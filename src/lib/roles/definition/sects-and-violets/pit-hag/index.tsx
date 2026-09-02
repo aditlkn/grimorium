@@ -58,7 +58,7 @@ export function getPitHagQueuePolicyForNewRole(
 
 const definition: RoleDefinition = {
   id: 'pit_hag',
-  team: 'minion',
+  roleTeam: 'minion',
   icon: 'shovel',
   nightOrder: 8,
   chaos: 82,

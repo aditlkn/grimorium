@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
 import { GameState, PlayerState, hasEffect } from '../../lib/types'
-import { getCurrentRole, getCurrentRoleId, getCurrentTeam } from '../../lib/identity'
+import {
+  getCurrentAlignment,
+  getCurrentRole,
+  getCurrentRoleId,
+  getCurrentRoleTeam,
+} from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import { getRoleName, interpolate, useI18n } from '../../lib/i18n'
 import { Button, Icon } from '../atoms'
@@ -133,8 +138,9 @@ export function StorytellerGrimoireBoard({
 
         {seatPositions.map(({ player, x, y }) => {
           const role = getCurrentRole(player)
-          const teamId = getCurrentTeam(player) ?? 'townsfolk'
+          const teamId = getCurrentRoleTeam(player) ?? 'townsfolk'
           const team = getTeam(teamId)
+          const alignment = getCurrentAlignment(player)
           const isSelected = player.id === selectedPlayerId
           const isDead = hasEffect(player, 'dead')
           const effectIcons = getTokenEffectIcons(player)
@@ -175,7 +181,9 @@ export function StorytellerGrimoireBoard({
                       'absolute inset-0 rounded-full border bg-black/20',
                       isDead
                         ? 'border-parchment-500/20'
-                        : 'border-white/10',
+                        : alignment === 'evil'
+                          ? 'border-red-500/20'
+                          : 'border-white/10',
                     )}
                   />
                   <div

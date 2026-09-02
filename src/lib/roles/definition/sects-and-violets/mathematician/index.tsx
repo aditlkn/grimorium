@@ -21,7 +21,7 @@ registerRoleTranslations('mathematician', 'es', es)
 
 const definition: RoleDefinition = {
   id: 'mathematician',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'bookMarked',
   nightOrder: 17,
   chaos: 40,

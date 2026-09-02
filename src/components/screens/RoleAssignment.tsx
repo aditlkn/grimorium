@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { getRole } from '../../lib/roles'
+import { getRoleTeamId } from '../../lib/identity'
 import { getTeam } from '../../lib/teams'
 import { useI18n, interpolate, getRoleName } from '../../lib/i18n'
 import { resolveRoleAssignments } from '../../lib/roleAssignment'
@@ -122,10 +123,10 @@ export function RoleAssignment({
 
   const demonManuallyAssigned = Object.values(assignments).some((roleId) => {
     if (!roleId) return false
-    return getRole(roleId)?.team === 'demon'
+    return getRoleTeamId(getRole(roleId)) === 'demon'
   })
   const demonInRandomPool = rolesInRandomPool.some(
-    (roleId) => getRole(roleId)?.team === 'demon',
+    (roleId) => getRoleTeamId(getRole(roleId)) === 'demon',
   )
   const demonWillBeAssigned =
     demonManuallyAssigned || (willBeRandomlyAssigned > 0 && demonInRandomPool)
@@ -149,7 +150,9 @@ export function RoleAssignment({
 
       {/* Warning */}
       {!demonWillBeAssigned &&
-        selectedRoles.some((roleId) => getRole(roleId)?.team === 'demon') && (
+        selectedRoles.some(
+          (roleId) => getRoleTeamId(getRole(roleId)) === 'demon',
+        ) && (
         <div className='px-4 py-3 bg-mystic-crimson/20 border-b border-red-500/30'>
           <div className='max-w-lg mx-auto flex items-start gap-2'>
             <Icon
@@ -192,7 +195,7 @@ export function RoleAssignment({
               return (
                 <Badge
                   key={roleId}
-                  variant={role.team}
+                  variant={getRoleTeamId(role) ?? 'townsfolk'}
                   className='inline-flex items-center gap-1'
                 >
                   <Icon name={role.icon} size='xs' />
@@ -240,7 +243,8 @@ export function RoleAssignment({
                 const isExpanded = expandedPlayer === playerName
                 const currentRole = assignments[playerName]
                 const role = currentRole ? getRole(currentRole) : null
-                const team = role ? getTeam(role.team) : null
+                const teamId = role ? getRoleTeamId(role) : null
+                const team = teamId ? getTeam(teamId) : null
 
                 return (
                   <div
@@ -267,7 +271,7 @@ export function RoleAssignment({
                       </span>
                       {role ? (
                         <Badge
-                          variant={role.team}
+                          variant={teamId ?? 'townsfolk'}
                           className='inline-flex items-center gap-1'
                         >
                           <Icon name={role.icon} size='xs' />
@@ -308,7 +312,8 @@ export function RoleAssignment({
                             {getAvailableRoles(playerName).map((roleId) => {
                               const r = getRole(roleId)
                               if (!r) return null
-                              const rTeam = getTeam(r.team)
+                              const rTeamId = getRoleTeamId(r) ?? 'townsfolk'
+                              const rTeam = getTeam(rTeamId)
                               const isAssigned = currentRole === roleId
 
                               return (
@@ -370,7 +375,7 @@ export function RoleAssignment({
                     return (
                       <Badge
                         key={`${roleId}-${i}`}
-                        variant={r?.team}
+                        variant={r ? (getRoleTeamId(r) ?? 'townsfolk') : 'townsfolk'}
                         className='inline-flex items-center gap-1'
                       >
                         {r && <Icon name={r.icon} size='xs' />}

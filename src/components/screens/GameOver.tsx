@@ -1,4 +1,5 @@
 import { Game, GameState, hasEffect } from '../../lib/types'
+import { getCurrentAlignment, getRoleTeamId } from '../../lib/identity'
 import { getRole } from '../../lib/roles'
 import {
   useI18n,
@@ -176,11 +177,23 @@ export function GameOver({ game, state, onMainMenu, onShowHistory }: Props) {
                     </span>
                     {role && (
                       <Badge
-                        variant={role.team}
+                        variant={getRoleTeamId(role) ?? 'townsfolk'}
                         className='inline-flex items-center gap-1'
                       >
                         <Icon name={role.icon} size='xs' />{' '}
                         {getRoleName(role.id, language)}
+                      </Badge>
+                    )}
+                    {role && getCurrentAlignment(player) !== (getRoleTeamId(role) === 'minion' || getRoleTeamId(role) === 'demon' ? 'evil' : 'good') && (
+                      <Badge
+                        variant={getCurrentAlignment(player) === 'evil' ? 'demon' : 'townsfolk'}
+                        className='inline-flex items-center gap-1 ml-2'
+                      >
+                        <Icon
+                          name={getCurrentAlignment(player) === 'evil' ? 'thumbsDown' : 'thumbsUp'}
+                          size='xs'
+                        />
+                        {getCurrentAlignment(player)}
                       </Badge>
                     )}
                   </div>

@@ -33,7 +33,7 @@ export function getPhilosopherQueuePolicyForChosenRole(
 
 const definition: RoleDefinition = {
   id: 'philosopher',
-  team: 'townsfolk',
+  roleTeam: 'townsfolk',
   icon: 'bookUser',
   nightOrder: 20,
   chaos: 70,

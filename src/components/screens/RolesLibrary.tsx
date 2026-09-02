@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { getAllRoles, getRole } from '../../lib/roles'
 import { RoleId } from '../../lib/roles/types'
+import { getRoleTeamId } from '../../lib/identity'
 import { getTeam, TeamId } from '../../lib/teams'
 import { useI18n, getRoleName, getRoleDescription } from '../../lib/i18n'
 import { Icon, BackButton } from '../atoms'
@@ -37,7 +38,7 @@ export function RolesLibrary({
       .map((roleId) => getRole(roleId))
       .filter(
         (role): role is NonNullable<ReturnType<typeof getRole>> =>
-          role !== undefined && role.team === teamId,
+          role !== undefined && getRoleTeamId(role) === teamId,
       )
     return { teamId, team, roles }
   }).filter((group) => group.roles.length > 0)
@@ -51,7 +52,7 @@ export function RolesLibrary({
   // If a role is selected, show its full RoleCard with prev/next navigation
   if (selectedRoleId) {
     const selectedRole = getRole(selectedRoleId)
-    const selectedTeamId = selectedRole?.team ?? 'townsfolk'
+    const selectedTeamId = getRoleTeamId(selectedRole) ?? 'townsfolk'
     const selectedTeam = getTeam(selectedTeamId)
 
     const currentIndex = allRoleIds.indexOf(selectedRoleId)

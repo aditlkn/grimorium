@@ -16,6 +16,7 @@ import {
   generateRolePools,
   selectPresetPools,
 } from '../../lib/scripts/generator'
+import { getRoleTeamId } from '../../lib/identity'
 import { getTeam, TeamId } from '../../lib/teams'
 import {
   useI18n,
@@ -115,7 +116,7 @@ export function RoleSelection({
     for (const roleId of script.roles) {
       const role = ROLES[roleId]
       if (role) {
-        result[role.team].push(role)
+        result[getRoleTeamId(role) ?? 'townsfolk'].push(role)
       }
     }
     return result
@@ -132,7 +133,7 @@ export function RoleSelection({
     for (const [roleId, count] of Object.entries(roleCounts)) {
       const role = ROLES[roleId as keyof typeof ROLES]
       if (role) {
-        counts[role.team] += count
+        counts[getRoleTeamId(role) ?? 'townsfolk'] += count
       }
     }
     return counts
@@ -555,7 +556,7 @@ function GenerateView({
     for (const roleId of activePool.roles) {
       const role = ROLES[roleId]
       if (role) {
-        groups[role.team].push(roleId)
+        groups[getRoleTeamId(role) ?? 'townsfolk'].push(roleId)
       }
     }
     return groups
